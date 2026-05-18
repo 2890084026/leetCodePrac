@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    666
+    <script>
+        const arr = [1, 0, 2, 3, 0, 4, 5, 0]
+
+        function duplicateZero(arr) {
+            let des = -1
+            let cur = -1
+            for (i = 0; i < arr.length; i++) {
+                cur++
+                console.log(arr[i], 'arr[i]1');
+
+                if (arr[i]) {
+                    des++
+                } else {
+                    des += 2
+                }
+                if (des >= arr.length - 1) {
+                    break
+                }
+            }
+            console.log(cur, 'cur')
+            console.log(des, 'des', arr.length)
+
+            if (cur + 1 == arr.length) {
+                des -= 2
+                cur -= 1
+            }
+            console.log(cur, 'cur')
+            console.log(des, 'des')
+            for (i = cur; i >= 0; i--) {
+                console.log(arr[i], 'arr[i]')
+
+                if (arr[i] == 0) {
+                    arr[des--] = 0
+                    arr[des--] = 0
+                    cur--
+                } else {
+                    arr[des] = arr[cur] 
+                    cur--
+                    des--
+                }
+            }
+        }
+        duplicateZero(arr)
+        console.log(arr, 'arr')
+    </script>
+</body>
+
+</html>

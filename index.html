@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    66622
+    <script>
+        function generateParenthesis(n) {
+            const res = [];
+            // left:左括号数 right:右括号数 path:当前拼接字符串
+            let count = 0
+
+            function dfs(left, right, path, count) {
+                console.log(res, 'res', count);
+                // 终止：全部用完
+                count++
+                if (left === n && right === n) {
+                    res.push(path);
+                    return;
+                }
+                // 优先放左括号right
+                if (left < n) {
+                    console.log('left被执行了，此时left是' + left + "||||" + 'right是' + right);
+                    dfs(left + 1, right, path + '(', count);
+                }
+                // 右括号不能多于左括号
+                if (right < left) {
+                    console.log('right被执行了，此时left是' + left + "||||" + 'right是' + right);
+
+                    // console.log('right被执行了此时right是' + right + "||||" + "left是" + left);
+                    dfs(left, right + 1, path + ')', count);
+                }
+            }
+            dfs(0, 0, '', 0);
+            return res;
+        }
+        const res = generateParenthesis(2)
+        console.log(res, 'res');
+
+
+    </script>
+</body>
+
+</html>
