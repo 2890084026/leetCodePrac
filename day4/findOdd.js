@@ -78,6 +78,18 @@ console.log(singleNumber([4, 1, 2, 1, 2])) // 4
 //   return [res1, res2]
 // }
 
+// function findOdd(nums) {
+//   let eor = nums.reduce((acc, cur) => acc ^ cur, 0)
+//   let onlyOne = eor & (~eor + 1)
+//   let res1 = 0
+//   for (let num of nums) {
+//     if ((num & onlyOne) == 0) {
+//       res1 ^= num
+//     }
+//   }
+//   return [res1, res1 ^ eor]
+// }
+
 function findOdd(nums) {
   let eor = nums.reduce((acc, cur) => acc ^ cur, 0)
   let onlyOne = eor & (~eor + 1)

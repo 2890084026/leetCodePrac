@@ -23,6 +23,7 @@
 //   this.stack = []
 //   this.minStack = []
 // }
+
 // minStack.prototype.push = function (val) {
 //   this.stack.push(val)
 //   if (!this.minStack.length || val < this.minStack.at(-1)) {
@@ -51,15 +52,14 @@ const minStack = function () {
 }
 
 minStack.prototype.push = function (val) {
-  this.stack.push(val)
-  if (!this.stack || val < this.stack.at(-1)) {
-    this.stack.push(val)
+  this.stack.push()
+  if (!this.minStack.length || val < this.minStack.at(-1)) {
+    this.minStack.push(val)
   }
 }
-
-minStack.prototype.pop = function (val) {
-  let t = this.stack.pop()
-  if (t == this.minStack.at(-1)) {
+minStack.prototype.pop=function(){
+  let num =this.stack.pop()
+  if(num==this.minStack.at(-1)){
     this.minStack.pop()
   }
 }

@@ -10,38 +10,109 @@
 <body>
     66622
     <script>
-        function generateParenthesis(n) {
-            const res = [];
-            // left:左括号数 right:右括号数 path:当前拼接字符串
-            let count = 0
+        // function generateParenthesis(n) {
+        //     const res = [];
+        //     // left:左括号数 right:右括号数 path:当前拼接字符串
+        //     let count = 0
 
-            function dfs(left, right, path, count) {
-                console.log(res, 'res', count);
-                // 终止：全部用完
-                count++
-                if (left === n && right === n) {
-                    res.push(path);
-                    return;
-                }
-                // 优先放左括号right
-                if (left < n) {
-                    console.log('left被执行了，此时left是' + left + "||||" + 'right是' + right);
-                    dfs(left + 1, right, path + '(', count);
-                }
-                // 右括号不能多于左括号
-                if (right < left) {
-                    console.log('right被执行了，此时left是' + left + "||||" + 'right是' + right);
+        //     function dfs(left, right, path, count) {
+        //         console.log(res, 'res', count);
+        //         // 终止：全部用完
+        //         count++
+        //         if (left === n && right === n) {
+        //             res.push(path);
+        //             return;
+        //         }
+        //         // 优先放左括号right
+        //         if (left < n) {
+        //             console.log('left被执行了，此时left是' + left + "||||" + 'right是' + right);
+        //             dfs(left + 1, right, path + '(', count);
+        //         }
+        //         // 右括号不能多于左括号
+        //         if (right < left) {
+        //             console.log('right被执行了，此时left是' + left + "||||" + 'right是' + right);
 
-                    // console.log('right被执行了此时right是' + right + "||||" + "left是" + left);
-                    dfs(left, right + 1, path + ')', count);
+        //             // console.log('right被执行了此时right是' + right + "||||" + "left是" + left);
+        //             dfs(left, right + 1, path + ')', count);
+        //         }
+        //     }
+        //     dfs(0, 0, '', 0);
+        //     return res;
+        // }
+        // const res = generateParenthesis(2)
+        // console.log(res, 'res');
+
+        // function dailyTemperatures(temperatures) {
+        //     const n = temperatures.length;
+        //     const res = new Array(n).fill(0); // 结果数组，默认 0
+        //     const stack = []; // 单调栈，存下标
+
+        //     for (let i = 0; i < n; i++) {
+        //         // 当前温度 > 栈顶温度 → 找到了下一个更高温
+        //         while (stack.length > 0 && temperatures[i] > temperatures[stack[stack.length - 1]]) {
+        //             const prevIndex = stack.pop();
+        //             res[prevIndex] = i - prevIndex;
+        //         }
+        //         stack.push(i);
+        //     }
+
+        //     return res;
+        // }
+
+        // // 测试用例 1
+        // const t1 = [73, 74, 75, 71, 69, 72, 76, 73];
+        // console.log(dailyTemperatures(t1));
+
+
+        // 预期：[1,1,4,2,1,1,0,0]
+        // function dailyTemperatures(temperatures) {
+        //     let n = temperatures.length
+        //     let res = new Array(n).fill(0)
+        //     let stack = []
+        //     for (let i = 0; i < n; i++) {
+        //         console.log(i, 'i');
+        //         console.log(stack, 'stack');
+        //         console.log(temperatures[i], 'temperatures[i]');
+        //         console.log(temperatures[stack.at(-1)], 'temperatures[stack.at(-1)]');
+
+        //         while (!stack.length && temperatures[i] > temperatures[stack.at(-1)]) {
+        //             let prevIndex = stack.pop()
+        //             res[prevIndex] = i - prevIndex
+        //         }
+        //         stack.push(i)
+        //     }
+        //     return res
+        // }
+
+        // // 测试用例 1
+        // const t1 = [73, 74, 75, 71, 69, 72, 76, 73]
+        // console.log(dailyTemperatures(t1))
+
+        function largestRectangleArea(heights) {
+            const stack = [];
+            let maxArea = 0;
+            // 末尾补一个0，强制把栈里所有元素都结算掉
+            heights.push(0);
+
+            for (let i = 0; i < heights.length; i++) {
+                // 当前高度 小于 栈顶高度，开始出栈计算
+                while (stack.length && heights[i] < heights[stack.at(-1)]) {
+                    const cur = stack.pop();
+                    const h = heights[cur];
+                    // 左边界
+                    const left = stack.length ? stack.at(-1) : -1;
+                    const w = i - left - 1;
+                    maxArea = Math.max(maxArea, h * w);
                 }
+                stack.push(i);
             }
-            dfs(0, 0, '', 0);
-            return res;
+            return maxArea;
         }
-        const res = generateParenthesis(2)
-        console.log(res, 'res');
-
+        console.log(largestRectangleArea([2, 1, 5, 6, 2, 3])) // 10
+        console.log(largestRectangleArea([1, 2, 3, 4, 5])) // 9
+        console.log(largestRectangleArea([5, 4, 3, 2, 1])) // 9
+        console.log(largestRectangleArea([])) // 0
+        console.log(largestRectangleArea([1])) // 1
 
     </script>
 </body>

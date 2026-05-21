@@ -60,14 +60,16 @@ function isValidBracket(strs) {
     '}': '{',
     ']': '[',
   }
-  let stack = []
+  const stack = []
   for (let str of strs) {
     if (Object.values(bracketMap).includes(str)) {
       stack.push(str)
-    } else if (!stack.length || stack.pop() != bracketMap[str]) {
-      return false
+    } else if (str in bracketMap) {
+      if (!stack.length || stack.pop() !== bracketMap[str]) {
+        return false
+      }
     } else {
-      return null
+      return false
     }
   }
   return stack.length == 0
