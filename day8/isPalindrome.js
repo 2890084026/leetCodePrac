@@ -45,14 +45,15 @@
 //     }
 //     return true;
 // };
-function isPalindrome(str) {
+function isPalindrome(strs) {
   let left = 0
-  let right = str.length - 1
-  let isvalid = (s) => /[0-9a-zA-Z]/.test(s)
+  let right = strs.length - 1
+  let rag = (a) => /[a-zA-Z0-9]/.test(a)
   while (left < right) {
-    while (left < right && !isvalid(str[left])) left++
-    while (left < right && !isvalid(str[right])) right--
-    if (str[left].toLowerCase() !== str[right].toLowerCase()) {
+    while (left < right && !rag(strs[left])) left++
+    while (left < right && !rag(strs[right])) right--
+
+    if (strs[left].toLowerCase() !== strs[right].toLowerCase()) {
       return false
     }
     left++
@@ -66,6 +67,13 @@ function isPalindrome(str) {
 //   const reverseStr = validStr.split('').reverse().join('')
 //   return validStr == reverseStr
 // }
+
+function easyWay(strs) {
+  let validStr = strs.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()
+  let reverseStr = validStr.split('').reverse().join('')
+  return validStr == reverseStr
+}
+
 // 测试用例
 const testCases = [
   ['A man, a plan, a canal: Panama', true],

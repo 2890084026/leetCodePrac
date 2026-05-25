@@ -26,6 +26,21 @@
 // 输入：numbers = [-1,0], target = -1
 // 输出：[1,2]
 // 解释：-1 与 0 之和等于目标数 -1 。因此 index1 = 1, index2 = 2 。返回 [1, 2] 。
+// function twoSum(arr, tar) {
+//   let left = 0
+//   let right = arr.length - 1
+//   while (left < right) {
+//     let sum = arr[left] + arr[right]
+//     if (sum < tar) {
+//       left++
+//     } else if (sum > tar) {
+//       right--
+//     } else if (sum == tar) {
+//       return [left + 1, right + 1]
+//     }
+//   }
+// }
+
 function twoSum(arr, tar) {
   let left = 0
   let right = arr.length - 1
@@ -35,7 +50,7 @@ function twoSum(arr, tar) {
       left++
     } else if (sum > tar) {
       right--
-    } else if (sum == tar) {
+    } else {
       return [left + 1, right + 1]
     }
   }

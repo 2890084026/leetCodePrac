@@ -41,12 +41,12 @@ function evalRPN(tokens) {
     '*': (a, b) => a * b,
     '/': (a, b) => Math.trunc(a / b),
   }
-  for(let token of tokens){
-    if(token in ops){
+  for (let token of tokens) {
+    if (token in ops) {
       let b = stack.pop()
       let a = stack.pop()
-      stack.push(ops[token](a,b))
-    }else{
+      stack.push(ops[token](a, b))
+    } else {
       stack.push(Number(token))
     }
   }

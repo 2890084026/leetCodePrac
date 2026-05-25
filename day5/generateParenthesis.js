@@ -25,6 +25,7 @@
 //   dfs('', 0, 0)
 //   return stack
 // }
+
 function generateParenthesis(num) {
   let stack = []
   function dfs(left, right, path) {
@@ -43,3 +44,4 @@ function generateParenthesis(num) {
 }
 
 console.log(generateParenthesis(2))
+console.log(generateParenthesis(3))

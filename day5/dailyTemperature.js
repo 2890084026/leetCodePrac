@@ -18,12 +18,12 @@
 //     return res;
 // }
 
-function dailyTemperatures(temperatures) {
-  let n = temperatures.length
-  let res = new Array(n).fill(0)
-  stack = []
-  for (i = 0; i < n; i++) {
-    while (stack.length && temperatures[i] > temperatures[stack.at(-1)]) {
+function dailyTemperatures(nums) {
+  let len = nums.length
+  let stack = []
+  let res = new Array(len).fill(0)
+  for (i = 0; i < len; i++) {
+    while (stack.length && nums[i] > nums[stack.at(-1)]) {
       let prevIndex = stack.pop()
       res[prevIndex] = i - prevIndex
     }

@@ -1,3 +1,5 @@
+"use strict";
+
 // 题目
 // 设计一个支持 push ，pop ，top 操作，并能在常数时间内检索到最小元素的栈。
 // 实现 MinStack 类:
@@ -18,30 +20,25 @@
 // [[],[-2],[0],[-3],[],[],[],[]]
 // 输出：
 // [null,null,null,null,-3,null,0,-2]
-
 // let minStack = function () {
 //   this.stack = []
 //   this.minStack = []
 // }
-
 // minStack.prototype.push = function (val) {
 //   this.stack.push(val)
 //   if (!this.minStack.length || val < this.minStack.at(-1)) {
 //     this.minStack.push(val)
 //   }
 // }
-
 // minStack.prototype.pop = function () {
 //   let t = this.stack.pop()
 //   if (t == this.minStack.at(-1)) {
 //     this.minStack.pop()
 //   }
 // }
-
 // minStack.prototype.top = function () {
 //   return this.stack.at(-1)
 // }
-
 // minStack.prototype.getMin = function () {
 //   return this.minStack.at(-1)
 // }
@@ -49,46 +46,51 @@
 /**
  * initialize your data structure here.
  */
-var MinStack = function () {
-    this.stack = []
-    this.minstack = []
+var MinStack = function MinStack() {
+  this.stack = [];
+  this.minstack = [];
 };
-
 /** 
  * @param {number} x
  * @return {void}
  */
-MinStack.prototype.push = function (x) {
-    this.stack.push(x)
-    if (!this.minstack.length || x <= this.minstack.at(-1)) {
-        this.minstack.push(x)
-    }
-};
 
+
+MinStack.prototype.push = function (x) {
+  this.stack.push(x);
+
+  if (!this.minstack.length || x <= this.minstack.at(-1)) {
+    this.minstack.push(x);
+  }
+};
 /**
  * @return {void}
  */
+
+
 MinStack.prototype.pop = function () {
-    let t = this.stack.pop()
-    if (t == this.minstack.at(-1)) {
-        this.minstack.pop()
-    }
-};
+  var t = this.stack.pop();
 
+  if (t == this.minstack.at(-1)) {
+    this.minstack.pop();
+  }
+};
 /**
  * @return {number}
  */
+
+
 MinStack.prototype.top = function () {
-    return this.stack.at(-1)
+  return this.stack.at(-1);
 };
-
 /**
  * @return {number}
  */
-MinStack.prototype.getMin = function () {
-    return this.minstack.at(-1)
-};
 
+
+MinStack.prototype.getMin = function () {
+  return this.minstack.at(-1);
+};
 /** 
  * Your MinStack object will be instantiated and called as such:
  * var obj = new MinStack()
@@ -97,13 +99,16 @@ MinStack.prototype.getMin = function () {
  * var param_3 = obj.top()
  * var param_4 = obj.getMin()
  */
-
 // 开始测试
-let ms = new MinStack()
-ms.push(-2)
-ms.push(0)
-ms.push(-3)
-console.log(ms.getMin()) // 应输出 -3
-ms.pop()
-console.log(ms.top()) // 应输出 0
-console.log(ms.getMin()) // 应输出 -2
+
+
+var ms = new MinStack();
+ms.push(-2);
+ms.push(0);
+ms.push(-3);
+console.log(ms.getMin()); // 应输出 -3
+
+ms.pop();
+console.log(ms.top()); // 应输出 0
+
+console.log(ms.getMin()); // 应输出 -2
