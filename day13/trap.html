@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>LeetCode42 接雨水 双指针动画（坐标图对照）</title>
+  <style>
+    body { font-family: "Microsoft YaHei", Arial; padding: 20px; background: #111; color: #fff; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    h2 { text-align: center; }
+    .info { margin: 12px 0; font-size: 16px; line-height: 1.8; }
+    /* 数组格子样式 */
+    .arr-box { display: flex; gap: 6px; margin: 30px 0; justify-content: center; align-items: flex-end; height: 200px; }
+    .cell {
+      width: 48px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; border-radius: 6px 6px 0 0;
+      background: #333; border: 2px solid #555;
+      color: #fff;
+      position: relative;
+      transition: height 0.3s ease;
+    }
+    .left { border-color: #4cf; box-shadow: 0 0 8px #4cf; }
+    .right { border-color: #f84; box-shadow: 0 0 8px #f84; }
+    .water { background: #49f; position: absolute; left: 0; right: 0; z-index: 1; border-radius: 6px 6px 0 0; }
+    /* 坐标图容器 */
+    .chart-box {
+      width: 100%;
+      height: 250px;
+      margin: 20px auto;
+      border: 1px solid #555;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    .chart-axis { position: absolute; background: #666; }
+    .chart-x { width: 100%; height: 1px; bottom: 0; left: 0; }
+    .chart-y { width: 1px; height: 100%; bottom: 0; left: 40px; }
+    .chart-tick { position: absolute; font-size: 12px; color: #999; }
+    .chart-bar {
+      position: absolute;
+      bottom: 0;
+      background: #333;
+      border: 2px solid #555;
+      border-radius: 6px 6px 0 0;
+      transition: all 0.3s ease;
+    }
+    .chart-water {
+      position: absolute;
+      bottom: 0;
+      background: #49f8;
+      transition: all 0.3s ease;
+      border-radius: 6px 6px 0 0;
+      z-index: 1;
+    }
+    .chart-label {
+      position: absolute;
+      font-size: 12px;
+      color: #ccc;
+    }
+    .chart-left { background: #4cf; box-shadow: 0 0 8px #4cf; }
+    .chart-right { background: #f84; box-shadow: 0 0 8px #f84; }
+    /* 按钮样式 */
+    .btn-group { margin: 15px 0; text-align: center; }
+    .btn-group button {
+      padding: 8px 16px; font-size: 15px;
+      margin: 0 6px; cursor: pointer;
+      background: #236; color: #fff; border: none; border-radius: 4px;
+    }
+    .btn-group button:disabled { background: #444; cursor: not-allowed; }
+    /* 代码区域样式 */
+    .code-wrap {
+      margin-top: 30px;
+      background: #1a1a1a;
+      padding: 16px;
+      border-radius: 8px;
+      border: 1px solid #444;
+    }
+    .code-title { font-size:18px; margin-bottom:10px; color:#8cf; }
+    pre { font-family: Consolas,monospace; font-size:14px; line-height:1.6; margin:0; }
+    .code-line { display:block; padding:2px 6px; border-radius:3px; }
+    .active-line { background:#305; } /* 当前执行行高亮 */
+  </style>
+</head>
+<body>
+<div class="container">
+  <h2>LeetCode 42 接雨水 双指针动画演示（坐标图对照）</h2>
+  <div class="info">
+    <div>left 指针：<span style="color:#4cf">蓝色边框</span> 左边界指针</div>
+    <div>right 指针：<span style="color:#f84">橙色边框</span> 右边界指针</div>
+    <div>蓝色区域：当前可接雨水的区域</div>
+    <div id="stepText">当前步骤：等待操作</div>
+    <div id="varText"></div>
+  </div>
+
+  <!-- 数组可视化 -->
+  <div class="arr-box" id="arrWrap"></div>
+
+  <!-- 坐标图可视化 -->
+  <div class="chart-box" id="chartWrap">
+    <div class="chart-axis chart-x"></div>
+    <div class="chart-axis chart-y"></div>
+  </div>
+
+  <div class="btn-group">
+    <button id="autoPlayBtn">自动播放</button>
+    <button id="pauseBtn" disabled>暂停</button>
+    <button id="nextStepBtn">单步下一步</button>
+    <button id="resetBtn">重置</button>
+  </div>
+
+  <!-- 代码展示区域 -->
+  <div class="code-wrap">
+    <div class="code-title">算法源码（当前执行行会紫色高亮）</div>
+    <pre id="codeBox"></pre>
+  </div>
+</div>
+
+<script>
+// 原始测试数组（接雨水经典案例）
+const originHeight = [0,1,0,2,1,0,1,3,2,1,2,1];
+let height = JSON.parse(JSON.stringify(originHeight));
+let left = 0;
+let right = height.length - 1;
+let leftMax = 0;
+let rightMax = 0;
+let ans = 0;
+let stepQueue = [];
+let timer = null;
+let curStepIdx = 0;
+let isPlaying = false;
+
+// 源码文本 + 每一行对应编号（用于匹配高亮）
+const codeSource = [
+  { line:1, text:"function trap(height) {" },
+  { line:2, text:"  let left = 0, right = height.length - 1;" },
+  { line:3, text:"  let leftMax = 0, rightMax = 0;" },
+  { line:4, text:"  let ans = 0;" },
+  { line:5, text:"  while (left < right) {" },
+  { line:6, text:"    if (height[left] < height[right]) {" },
+  { line:7, text:"      if (height[left] >= leftMax) {" },
+  { line:8, text:"        leftMax = height[left];" },
+  { line:9, text:"      } else {" },
+  { line:10,text:"        ans += leftMax - height[left];" },
+  { line:11,text:"      }" },
+  { line:12,text:"      left++;" },
+  { line:13,text:"    } else {" },
+  { line:14,text:"      if (height[right] >= rightMax) {" },
+  { line:15,text:"        rightMax = height[right];" },
+  { line:16,text:"      } else {" },
+  { line:17,text:"        ans += rightMax - height[right];" },
+  { line:18,text:"      }" },
+  { line:19,text:"      right--;" },
+  { line:20,text:"    }" },
+  { line:21,text:"  }" },
+  { line:22,text:"  return ans;" },
+  { line:23,text:"}" }
+];
+
+// 构建步骤队列（核心逻辑：模拟双指针执行过程）
+function buildSteps() {
+  stepQueue = [];
+  height = JSON.parse(JSON.stringify(originHeight));
+  left = 0;
+  right = height.length - 1;
+  leftMax = 0;
+  rightMax = 0;
+  ans = 0;
+
+  // 初始化步骤
+  stepQueue.push({
+    desc: "初始化：left=0，right=11，leftMax=0，rightMax=0，ans=0",
+    l: left, r: right, lm: leftMax, rm: rightMax, res: ans, 
+    arr: [...height], water: Array(height.length).fill(0), codeLine:2
+  });
+
+  // 模拟双指针执行流程
+  while (left < right) {
+    const curLeftVal = height[left];
+    const curRightVal = height[right];
+    const waterArr = Array(height.length).fill(0);
+    
+    // 记录当前指针位置的判断步骤
+    if (curLeftVal < curRightVal) {
+      stepQueue.push({
+        desc: `left=${left} (值${curLeftVal}) < right=${right} (值${curRightVal})，处理左指针`,
+        l: left, r: right, lm: leftMax, rm: rightMax, res: ans, 
+        arr: [...height], water: [...waterArr], codeLine:6
+      });
+
+      if (curLeftVal >= leftMax) {
+        leftMax = curLeftVal;
+        stepQueue.push({
+          desc: `height[left]=${curLeftVal} >= leftMax=${leftMax - curLeftVal}，更新leftMax=${leftMax}`,
+          l: left, r: right, lm: leftMax, rm: rightMax, res: ans, 
+          arr: [...height], water: [...waterArr], codeLine:8
+        });
+      } else {
+        const add = leftMax - curLeftVal;
+        ans += add;
+        waterArr[left] = add; // 标记当前位置的雨水量
+        stepQueue.push({
+          desc: `height[left]=${curLeftVal} < leftMax=${leftMax}，累加雨水 ${add}，ans=${ans}`,
+          l: left, r: right, lm: leftMax, rm: rightMax, res: ans, 
+          arr: [...height], water: [...waterArr], codeLine:10
+        });
+      }
+      left++;
+      stepQueue.push({
+        desc: `left指针右移，left=${left}`,
+        l: left, r: right, lm: leftMax, rm: rightMax, res: ans, 
+        arr: [...height], water: [...waterArr], codeLine:12
+      });
+    } else {
+      stepQueue.push({
+        desc: `height[left]=${curLeftVal} >= height[right]=${curRightVal}，处理右指针`,
+        l: left, r: right, lm: leftMax, rm: rightMax, res: ans, 
+        arr: [...height], water: [...waterArr], codeLine:13
+      });
+
+      if (curRightVal >= rightMax) {
+        rightMax = curRightVal;
+        stepQueue.push({
+          desc: `height[right]=${curRightVal} >= rightMax=${rightMax - curRightVal}，更新rightMax=${rightMax}`,
+          l: left, r: right, lm: leftMax, rm: rightMax, res: ans, 
+          arr: [...height], water: [...waterArr], codeLine:15
+        });
+      } else {
+        const add = rightMax - curRightVal;
+        ans += add;
+        waterArr[right] = add; // 标记当前位置的雨水量
+        stepQueue.push({
+          desc: `height[right]=${curRightVal} < rightMax=${rightMax}，累加雨水 ${add}，ans=${ans}`,
+          l: left, r: right, lm: leftMax, rm: rightMax, res: ans, 
+          arr: [...height], water: [...waterArr], codeLine:17
+        });
+      }
+      right--;
+      stepQueue.push({
+        desc: `right指针左移，right=${right}`,
+        l: left, r: right, lm: leftMax, rm: rightMax, res: ans, 
+        arr: [...height], water: [...waterArr], codeLine:19
+      });
+    }
+  }
+
+  // 最终结果步骤
+  stepQueue.push({
+    desc: `遍历结束，总接雨水量 = ${ans}`,
+    l: left, r: right, lm: leftMax, rm: rightMax, res: ans, 
+    arr: [...height], water: getTotalWaterArr(), codeLine:22
+  });
+}
+
+// 计算每个位置的总雨水量（用于最终展示）
+function getTotalWaterArr() {
+  const water = Array(height.length).fill(0);
+  const leftMaxArr = Array(height.length).fill(0);
+  const rightMaxArr = Array(height.length).fill(0);
+  
+  leftMaxArr[0] = height[0];
+  for (let i = 1; i < height.length; i++) {
+    leftMaxArr[i] = Math.max(leftMaxArr[i-1], height[i]);
+  }
+  
+  rightMaxArr[height.length-1] = height[height.length-1];
+  for (let i = height.length-2; i >= 0; i--) {
+    rightMaxArr[i] = Math.max(rightMaxArr[i+1], height[i]);
+  }
+  
+  for (let i = 0; i < height.length; i++) {
+    water[i] = Math.min(leftMaxArr[i], rightMaxArr[i]) - height[i];
+  }
+  return water;
+}
+
+// DOM元素
+const arrWrap = document.getElementById('arrWrap');
+const chartWrap = document.getElementById('chartWrap');
+const stepText = document.getElementById('stepText');
+const varText = document.getElementById('varText');
+const autoPlayBtn = document.getElementById('autoPlayBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const nextStepBtn = document.getElementById('nextStepBtn');
+const resetBtn = document.getElementById('resetBtn');
+const codeBox = document.getElementById('codeBox');
+
+// 渲染数组格子
+function renderUI(s) {
+  arrWrap.innerHTML = '';
+  const maxHeight = Math.max(...s.arr) || 1;
+  const cellBaseHeight = 180 / maxHeight; // 基础高度比例
+
+  s.arr.forEach((val, idx) => {
+    const cellHeight = val * cellBaseHeight;
+    const waterHeight = s.water[idx] * cellBaseHeight;
+    
+    const div = document.createElement('div');
+    div.className = 'cell';
+    div.style.height = `${cellHeight}px`;
+    div.style.bottom = '0';
+    
+    // 标记指针
+    if (idx === s.l) div.classList.add('left');
+    if (idx === s.r) div.classList.add('right');
+    
+    // 雨水层
+    if (waterHeight > 0) {
+      const waterDiv = document.createElement('div');
+      waterDiv.className = 'water';
+      waterDiv.style.height = `${waterHeight}px`;
+      waterDiv.style.bottom = `${cellHeight}px`;
+      div.appendChild(waterDiv);
+    }
+    
+    div.innerHTML += `<span style="position:absolute; bottom:-20px; font-size:12px;">${val}</span>`;
+    arrWrap.appendChild(div);
+  });
+
+  // 渲染坐标图
+  renderChart(s);
+}
+
+// 渲染坐标图（对照用）
+function renderChart(s) {
+  chartWrap.innerHTML = '';
+  const maxVal = Math.max(...s.arr, ...s.water) || 1;
+  const chartWidth = chartWrap.clientWidth - 80;
+  const chartHeight = chartWrap.clientHeight - 40;
+  const barWidth = chartWidth / s.arr.length - 8;
+  const xStart = 40;
+  const yScale = chartHeight / maxVal;
+
+  // 创建坐标轴
+  const xAxis = document.createElement('div');
+  xAxis.className = 'chart-axis chart-x';
+  chartWrap.appendChild(xAxis);
+  
+  const yAxis = document.createElement('div');
+  yAxis.className = 'chart-axis chart-y';
+  chartWrap.appendChild(yAxis);
+
+  // 创建刻度和标签
+  for (let i = 0; i <= maxVal; i++) {
+    const tick = document.createElement('div');
+    tick.className = 'chart-tick';
+    tick.style.bottom = `${i * yScale}px`;
+    tick.style.left = '30px';
+    tick.textContent = i;
+    chartWrap.appendChild(tick);
+  }
+
+  // 创建柱状图和雨水层
+  s.arr.forEach((val, idx) => {
+    const x = xStart + idx * (barWidth + 8);
+    const barHeight = val * yScale;
+    
+    // 柱子
+    const bar = document.createElement('div');
+    bar.className = 'chart-bar';
+    if (idx === s.l) bar.classList.add('chart-left');
+    if (idx === s.r) bar.classList.add('chart-right');
+    bar.style.left = `${x}px`;
+    bar.style.width = `${barWidth}px`;
+    bar.style.height = `${barHeight}px`;
+    chartWrap.appendChild(bar);
+
+    // 雨水层
+    const waterHeight = s.water[idx] * yScale;
+    if (waterHeight > 0) {
+      const water = document.createElement('div');
+      water.className = 'chart-water';
+      water.style.left = `${x}px`;
+      water.style.width = `${barWidth}px`;
+      water.style.height = `${waterHeight}px`;
+      water.style.bottom = `${barHeight}px`;
+      chartWrap.appendChild(water);
+    }
+
+    // X轴标签
+    const label = document.createElement('div');
+    label.className = 'chart-label';
+    label.style.left = `${x + barWidth/2 - 8}px`;
+    label.style.bottom = '-20px';
+    label.textContent = idx;
+    chartWrap.appendChild(label);
+  });
+}
+
+// 渲染代码并高亮当前行
+function renderCode(activeLineNum) {
+  codeBox.innerHTML = '';
+  codeSource.forEach(item => {
+    const span = document.createElement('span');
+    span.className = 'code-line';
+    span.textContent = item.text;
+    if(item.line === activeLineNum) span.classList.add('active-line');
+    codeBox.appendChild(span);
+  });
+}
+
+// 渲染当前一步全部视图
+function renderCurrentStep() {
+  if(curStepIdx >= stepQueue.length) return;
+  const s = stepQueue[curStepIdx];
+  
+  // 更新变量文本
+  stepText.textContent = `步骤 ${curStepIdx+1}/${stepQueue.length}：${s.desc}`;
+  varText.innerHTML = `left=${s.l} &nbsp;&nbsp; right=${s.r} &nbsp;&nbsp; leftMax=${s.lm} &nbsp;&nbsp; rightMax=${s.rm} &nbsp;&nbsp; 累计雨水=${s.res}`;
+  
+  // 渲染UI和代码
+  renderUI(s);
+  renderCode(s.codeLine);
+}
+
+// 单步前进
+function goNextStep() {
+  if(curStepIdx >= stepQueue.length) return;
+  renderCurrentStep();
+  curStepIdx++;
+  
+  // 最后一步禁用播放
+  if(curStepIdx >= stepQueue.length) {
+    stopAutoPlay();
+  }
+}
+
+// 自动播放
+function startAutoPlay() {
+  if(isPlaying) return;
+  if(stepQueue.length === 0) buildSteps();
+  
+  isPlaying = true;
+  autoPlayBtn.disabled = true;
+  pauseBtn.disabled = false;
+  
+  timer = setInterval(() => {
+    if(curStepIdx >= stepQueue.length) {
+      stopAutoPlay();
+      return;
+    }
+    goNextStep();
+  }, 1200); // 接雨水步骤稍慢，便于理解
+}
+
+// 暂停
+function stopAutoPlay() {
+  clearInterval(timer);
+  timer = null;
+  isPlaying = false;
+  autoPlayBtn.disabled = false;
+  pauseBtn.disabled = true;
+}
+
+// 重置全部
+function resetAll() {
+  stopAutoPlay();
+  curStepIdx = 0;
+  stepQueue = [];
+  
+  // 重置UI
+  stepText.textContent = "当前步骤：等待操作";
+  varText.innerHTML = "";
+  renderUI({
+    l:0, r: originHeight.length-1, lm:0, rm:0, res:0,
+    arr: [...originHeight], water: Array(originHeight.length).fill(0)
+  });
+  renderCode(0);
+}
+
+// 按钮事件绑定
+autoPlayBtn.onclick = startAutoPlay;
+pauseBtn.onclick = stopAutoPlay;
+nextStepBtn.onclick = goNextStep;
+resetBtn.onclick = resetAll;
+
+// 初始化
+buildSteps();
+renderUI({
+  l:0, r: originHeight.length-1, lm:0, rm:0, res:0,
+  arr: [...originHeight], water: Array(originHeight.length).fill(0)
+});
+renderCode(0);
+</script>
+</body>
+</html>

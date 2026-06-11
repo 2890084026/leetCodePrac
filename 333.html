@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>LeetCode443 字符压缩双指针动画（代码行高亮）</title>
+  <style>
+    body { font-family: "Microsoft YaHei", Arial; padding: 20px; background: #111; color: #fff; }
+    .container { max-width: 1000px; margin: 0 auto; }
+    h2 { text-align: center; }
+    .info { margin: 12px 0; font-size: 16px; line-height: 1.8; }
+    .arr-box { display: flex; gap: 6px; margin: 30px 0; justify-content: center; }
+    .cell {
+      width: 48px; height: 48px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; border-radius: 6px;
+      background: #333; border: 2px solid #555;
+    }
+    .read { border-color: #4cf; box-shadow: 0 0 8px #4cf; }
+    .write { border-color: #f84; box-shadow: 0 0 8px #f84; }
+    .write-read { border-color: #ff0; box-shadow: 0 0 8px #ff0; }
+    .btn-group { margin: 15px 0; text-align: center; }
+    .btn-group button {
+      padding: 8px 16px; font-size: 15px;
+      margin: 0 6px; cursor: pointer;
+      background: #236; color: #fff; border: none; border-radius: 4px;
+    }
+    .btn-group button:disabled { background: #444; cursor: not-allowed; }
+    /* 代码区域样式 */
+    .code-wrap {
+      margin-top: 30px;
+      background: #1a1a1a;
+      padding: 16px;
+      border-radius: 8px;
+      border: 1px solid #444;
+    }
+    .code-title { font-size:18px; margin-bottom:10px; color:#8cf; }
+    pre { font-family: Consolas,monospace; font-size:14px; line-height:1.6; margin:0; }
+    .code-line { display:block; padding:2px 6px; border-radius:3px; }
+    .active-line { background:#305; } /* 当前执行行高亮 */
+  </style>
+</head>
+<body>
+<div class="container">
+  <h2>LeetCode 443 原地字符压缩 双指针动画演示</h2>
+  <div class="info">
+    <div>read 指针：<span style="color:#4cf">蓝色边框</span> 读取统计</div>
+    <div>write 指针：<span style="color:#f84">橙色边框</span> 写入压缩结果</div>
+    <div>read与write重合：<span style="color:#ff0">黄色边框</span></div>
+    <div id="stepText">当前步骤：等待操作</div>
+    <div id="varText"></div>
+  </div>
+
+  <div class="arr-box" id="arrWrap"></div>
+
+  <div class="btn-group">
+    <button id="autoPlayBtn">自动播放</button>
+    <button id="pauseBtn" disabled>暂停</button>
+    <button id="nextStepBtn">单步下一步</button>
+    <button id="resetBtn">重置</button>
+  </div>
+
+  <!-- 代码展示区域 -->
+  <div class="code-wrap">
+    <div class="code-title">算法源码（当前执行行会紫色高亮）</div>
+    <pre id="codeBox"></pre>
+  </div>
+</div>
+
+<script>
+// 原始测试数组
+const originChars = ["a","a","b","b","c","c","c"];
+let chars = JSON.parse(JSON.stringify(originChars));
+let read = 0;
+let write = 0;
+let stepQueue = [];
+let timer = null;
+let curStepIdx = 0;
+let isPlaying = false;
+
+// 源码文本 + 每一行对应编号（用于匹配高亮）
+const codeSource = [
+  { line:1, text:"function compress(chars) {" },
+  { line:2, text:"  let write = 0;" },
+  { line:3, text:"  let read = 0;" },
+  { line:4, text:"  const n = chars.length;" },
+  { line:5, text:"  while (read < n) {" },
+  { line:6, text:"    let char = chars[read];" },
+  { line:7, text:"    let cnt = 0;" },
+  { line:8, text:"    while (read < n && chars[read] === char) {" },
+  { line:9, text:"      read++;" },
+  { line:10,text:"      cnt++;" },
+  { line:11,text:"    }" },
+  { line:12,text:"    chars[write++] = char;" },
+  { line:13,text:"    if (cnt > 1) {" },
+  { line:14,text:"      const numStr = cnt.toString();" },
+  { line:15,text:"      for(let c of numStr) {" },
+  { line:16,text:"        chars[write++] = c;" },
+  { line:17,text:"      }" },
+  { line:18,text:"    }" },
+  { line:19,text:"  }" },
+  { line:20,text:"  return write;" },
+  { line:21,text:"}" }
+];
+
+// 步骤队列每条绑定当前执行代码行号
+function buildSteps() {
+  stepQueue = [];
+  chars = JSON.parse(JSON.stringify(originChars));
+  read = 0;
+  write = 0;
+  const n = chars.length;
+
+  // 初始化，停在第2、3行
+  stepQueue.push({
+    desc: "初始化：read=0，write=0，开始遍历",
+    r: read, w: write, arr: [...chars], cnt: 0, cur: "", codeLine:2
+  });
+
+  while (read < n) {
+    let char = chars[read];
+    let cnt = 0;
+    // 进入外层while，char赋值
+    stepQueue.push({
+      desc: `新一段字符：${char}，开始统计连续数量`,
+      r: read, w: write, arr: [...chars], cnt, cur: char, codeLine:6
+    });
+
+    // 内层循环统计
+    while (read < n && chars[read] === char) {
+      read++;
+      cnt++;
+      stepQueue.push({
+        desc: `read右移统计，当前计数 cnt=${cnt}`,
+        r: read, w: write, arr: [...chars], cnt, cur: char, codeLine:9
+      });
+    }
+
+    // 写入当前字符 write++
+    chars[write] = char;
+    stepQueue.push({
+      desc: `write位置写入字符 ${char}`,
+      r: read, w: write, arr: [...chars], cnt, cur: char, codeLine:12
+    });
+    write++;
+
+    // 写入数字
+    if (cnt > 1) {
+      const numStr = cnt.toString();
+      for(let c of numStr) {
+        chars[write] = c;
+        stepQueue.push({
+          desc: `write写入计数字符 ${c}`,
+          r: read, w: write, arr: [...chars], cnt, cur: char, codeLine:16
+        });
+        write++;
+      }
+    }
+  }
+
+  // 函数结束返回
+  stepQueue.push({
+    desc: `遍历结束，压缩有效长度 write=${write}`,
+    r: read, w: write, arr: [...chars], cnt: 0, cur: "", codeLine:20
+  });
+}
+
+// DOM元素
+const arrWrap = document.getElementById('arrWrap');
+const stepText = document.getElementById('stepText');
+const varText = document.getElementById('varText');
+const autoPlayBtn = document.getElementById('autoPlayBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const nextStepBtn = document.getElementById('nextStepBtn');
+const resetBtn = document.getElementById('resetBtn');
+const codeBox = document.getElementById('codeBox');
+
+// 渲染数组格子
+function renderUI() {
+  arrWrap.innerHTML = '';
+  for(let i=0; i<chars.length; i++) {
+    const div = document.createElement('div');
+    div.className = 'cell';
+    div.textContent = chars[i];
+    if(i === read && i === write) div.classList.add('write-read');
+    else if(i === read) div.classList.add('read');
+    else if(i === write) div.classList.add('write');
+    arrWrap.appendChild(div);
+  }
+}
+
+// 渲染代码并高亮当前行
+function renderCode(activeLineNum) {
+  codeBox.innerHTML = '';
+  codeSource.forEach(item => {
+    const span = document.createElement('span');
+    span.className = 'code-line';
+    span.textContent = item.text;
+    if(item.line === activeLineNum) span.classList.add('active-line');
+    codeBox.appendChild(span);
+  });
+}
+
+// 渲染当前一步全部视图（数组+变量+代码高亮）
+function renderCurrentStep() {
+  if(curStepIdx >= stepQueue.length) return;
+  const s = stepQueue[curStepIdx];
+  read = s.r;
+  write = s.w;
+  chars = s.arr;
+  stepText.textContent = `步骤 ${curStepIdx+1}/${stepQueue.length}：${s.desc}`;
+  varText.innerHTML = `read=${read} &nbsp;&nbsp; write=${write} &nbsp;&nbsp; cur="${s.cur}" &nbsp;&nbsp; cnt=${s.cnt}`;
+  renderUI();
+  renderCode(s.codeLine);
+}
+
+// 单步前进
+function goNextStep() {
+  if(curStepIdx >= stepQueue.length) return;
+  renderCurrentStep();
+  curStepIdx++;
+}
+
+// 自动播放
+function startAutoPlay() {
+  if(isPlaying) return;
+  if(stepQueue.length === 0) buildSteps();
+  isPlaying = true;
+  autoPlayBtn.disabled = true;
+  pauseBtn.disabled = false;
+  timer = setInterval(() => {
+    if(curStepIdx >= stepQueue.length) {
+      stopAutoPlay();
+      return;
+    }
+    goNextStep();
+  }, 1000);
+}
+
+// 暂停
+function stopAutoPlay() {
+  clearInterval(timer);
+  timer = null;
+  isPlaying = false;
+  autoPlayBtn.disabled = false;
+  pauseBtn.disabled = true;
+}
+
+// 重置全部
+function resetAll() {
+  stopAutoPlay();
+  curStepIdx = 0;
+  stepQueue = [];
+  chars = JSON.parse(JSON.stringify(originChars));
+  read = 0;
+  write = 0;
+  stepText.textContent = "当前步骤：等待操作";
+  varText.innerHTML = "";
+  renderUI();
+  renderCode(0);
+}
+
+// 按钮事件
+autoPlayBtn.onclick = startAutoPlay;
+pauseBtn.onclick = stopAutoPlay;
+nextStepBtn.onclick = goNextStep;
+resetBtn.onclick = resetAll;
+
+// 初始渲染
+renderUI();
+renderCode(0);
+</script>
+</body>
+</html>
