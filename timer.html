@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>番茄时钟 | Pomodoro Timer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 40px 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            width: 90%;
+            max-width: 450px;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .status {
+            font-size: 18px;
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+
+        .time {
+            font-size: 72px;
+            font-weight: bold;
+            margin: 30px 0;
+            letter-spacing: 2px;
+        }
+
+        .end-time {
+            font-size: 16px;
+            margin-bottom: 20px;
+            opacity: 0.85;
+            min-height: 20px;
+        }
+
+        .mode-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+
+        .mode-btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .mode-btn.active {
+            background: white;
+            color: #764ba2;
+            font-weight: bold;
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .ctrl-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #start {
+            background: #4ade80;
+            color: white;
+        }
+
+        #pause {
+            background: #fbbf24;
+            color: white;
+        }
+
+        #reset {
+            background: #ef4444;
+            color: white;
+        }
+
+        .ctrl-btn:hover {
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 400px) {
+            .time {
+                font-size: 56px;
+            }
+            .mode-buttons {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>番茄时钟</h1>
+        <div class="status" id="status">准备开始专注</div>
+        <div class="time" id="time">25:00</div>
+        <div class="end-time" id="endTime"></div>
+
+        <div class="mode-buttons">
+            <button class="mode-btn active" id="focus">专注 25min</button>
+            <button class="mode-btn" id="shortBreak">短休息 5min</button>
+            <button class="mode-btn" id="longBreak">长休息 15min</button>
+        </div>
+
+        <div class="control-buttons">
+            <button class="ctrl-btn" id="start">开始</button>
+            <button class="ctrl-btn" id="pause">暂停</button>
+            <button class="ctrl-btn" id="reset">重置</button>
+        </div>
+    </div>
+
+    <script>
+        const TIME = {
+            focus: 25 * 60,
+            shortBreak: 5 * 60,
+            longBreak: 15 * 60
+        };
+
+        let currentTime = TIME.focus;
+        let isRunning = false;
+        let timer = null;
+        let currentMode = 'focus';
+        let startTime = 0; // 记录开始时间戳
+
+        const timeDisplay = document.getElementById('time');
+        const statusDisplay = document.getElementById('status');
+        const endTimeDisplay = document.getElementById('endTime');
+        const startBtn = document.getElementById('start');
+        const pauseBtn = document.getElementById('pause');
+        const resetBtn = document.getElementById('reset');
+        const focusBtn = document.getElementById('focus');
+        const shortBtn = document.getElementById('shortBreak');
+        const longBtn = document.getElementById('longBreak');
+
+        function formatTime(seconds) {
+            const min = Math.floor(seconds / 60);
+            const sec = seconds % 60;
+            return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+        }
+
+        function getEndTime(seconds) {
+            const now = new Date();
+            const end = new Date(now.getTime() + seconds * 1000);
+            const hour = end.getHours().toString().padStart(2, '0');
+            const minute = end.getMinutes().toString().padStart(2, '0');
+            return `${hour}:${minute}`;
+        }
+
+        function setMode(mode, text) {
+            currentMode = mode;
+            currentTime = TIME[mode];
+            timeDisplay.textContent = formatTime(currentTime);
+            statusDisplay.textContent = text;
+            endTimeDisplay.textContent = '';
+            reset();
+        }
+
+        // ✅ 修复核心：用真实时间差计算，永不暂停
+        function start() {
+            if (isRunning) return;
+            isRunning = true;
+            startTime = Date.now();
+            const endTime = getEndTime(currentTime);
+            endTimeDisplay.textContent = `预计结束时间：${endTime}`;
+
+            timer = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const remaining = currentTime - elapsed;
+
+                if (remaining <= 0) {
+                    clearInterval(timer);
+                    isRunning = false;
+                    timeDisplay.textContent = "00:00";
+                    endTimeDisplay.textContent = `已完成！结束时间：${new Date().getHours().toString().padStart(2, '0')}:${new Date().getMinutes().toString().padStart(2, '0')}`;
+                    const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3');
+                    audio.play();
+                    alert('计时完成！');
+                    return;
+                }
+
+                timeDisplay.textContent = formatTime(remaining);
+            }, 1000);
+        }
+
+        function pause() {
+            clearInterval(timer);
+            isRunning = false;
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            currentTime = Math.max(0, currentTime - elapsed);
+        }
+
+        function reset() {
+            clearInterval(timer);
+            isRunning = false;
+            currentTime = TIME[currentMode];
+            timeDisplay.textContent = formatTime(currentTime);
+            endTimeDisplay.textContent = '';
+        }
+
+        focusBtn.addEventListener('click', () => setMode('focus', '准备专注'));
+        shortBtn.addEventListener('click', () => setMode('shortBreak', '准备短休息'));
+        longBtn.addEventListener('click', () => setMode('longBreak', '准备长休息'));
+
+        startBtn.addEventListener('click', start);
+        pauseBtn.addEventListener('click', pause);
+        resetBtn.addEventListener('click', reset);
+    </script>
+</body>
+</html>

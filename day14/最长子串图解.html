@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>无重复字符的最长子串 - 算法图解</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        code, .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .char-box {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .slow-pointer {
+            animation: pulse-slow 1.5s ease-in-out infinite;
+        }
+        .fast-pointer {
+            animation: pulse-fast 1s ease-in-out infinite;
+        }
+        @keyframes pulse-slow {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        @keyframes pulse-fast {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        .hash-table-item {
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .code-highlight {
+            background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+            border-radius: 4px;
+            padding: 2px 6px;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="min-h-screen gradient-bg">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-white mb-3">
+                LCR 016. 无重复字符的最长子串
+            </h1>
+            <p class="text-white/80 text-lg">快慢双指针 + 哈希表 算法图解</p>
+        </div>        <div class="grid lg:grid-cols-7 gap-6">
+            <!-- 左侧：可视化区域 -->
+            <div class="lg:col-span-4 space-y-6">
+                <!-- 输入字符串展示 -->
+                <div class="glass-card rounded-2xl p-6 shadow-2xl">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 bg-purple-500 text-white rounded-lg flex items-center justify-center text-sm">📦</span>
+                        输入字符串
+                    </h2>
+                    <div id="string-container" class="flex flex-wrap gap-2 justify-center py-6"></div>
+                    <!-- 指针指示 -->
+                    <div class="flex justify-center gap-8 mt-4">
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 h-4 bg-blue-500 rounded-full"></div>
+                            <span class="text-gray-600">慢指针 (left)</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 h-4 bg-red-500 rounded-full"></div>
+                            <span class="text-gray-600">快指针 (right)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 当前窗口 -->
+                <div class="glass-card rounded-2xl p-6 shadow-2xl">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 bg-green-500 text-white rounded-lg flex items-center justify-center text-sm">🔍</span>
+                        当前窗口
+                    </h2>
+                    <div id="current-window" class="flex gap-2 justify-center py-4 min-h-[60px] flex-wrap">
+                        <span class="text-gray-400">等待开始...</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mt-4">
+                        <div class="bg-gray-50 rounded-xl p-4 text-center">
+                            <p class="text-sm text-gray-500 mb-1">窗口长度</p>
+                            <p id="window-length" class="text-3xl font-bold text-gray-800">0</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-xl p-4 text-center">
+                            <p class="text-sm text-gray-500 mb-1">最长长度</p>
+                            <p id="max-length" class="text-3xl font-bold text-purple-600">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 哈希表状态 -->
+                <div class="glass-card rounded-2xl p-6 shadow-2xl">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 bg-orange-500 text-white rounded-lg flex items-center justify-center text-sm">📋</span>
+                        哈希表 (字符 → 最新索引)
+                    </h2>
+                    <div id="hash-table" class="flex flex-wrap gap-3 justify-center min-h-[60px] py-4">
+                        <span class="text-gray-400">空</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧：控制面板和代码 -->
+            <div class="space-y-6 lg:col-span-3">
+                <!-- 控制面板 -->
+                <div class="glass-card rounded-2xl p-6 shadow-2xl">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 bg-blue-500 text-white rounded-lg flex items-center justify-center text-sm">🎮</span>
+                        控制面板
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <div class="flex gap-3">
+                            <button id="btn-start" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-xl transition-all transform hover:scale-105 shadow-lg">
+                                ▶ 开始
+                            </button>
+                            <button id="btn-reset" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-4 rounded-xl transition-all transform hover:scale-105 shadow-lg">
+                                ↺ 重置
+                            </button>
+                        </div>
+                        <button id="btn-step" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-4 rounded-xl transition-all transform hover:scale-105 shadow-lg" disabled>
+                            下一步 →
+                        </button>
+                        
+                        <div class="mt-4">
+                            <label class="text-sm text-gray-600 mb-2 block">速度调节</label>
+                            <input type="range" id="speed-slider" min="300" max="2000" value="1000" class="w-full">
+                            <div class="flex justify-between text-xs text-gray-400 mt-1">
+                                <span>快</span>
+                                <span>慢</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 状态信息 -->
+                <div class="glass-card rounded-2xl p-6 shadow-2xl">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 bg-yellow-500 text-white rounded-lg flex items-center justify-center text-sm">📝</span>
+                        执行说明
+                    </h2>
+                    <div id="status-message" class="text-gray-600 leading-relaxed min-h-[80px]">
+                        点击"开始"按钮启动算法动画，或点击"下一步"逐步执行。
+                    </div>
+                    
+                    <!-- 步骤计数器 -->
+                    <div class="mt-4 pt-4 border-t border-gray-200">
+                        <p class="text-sm text-gray-500">步骤 <span id="step-count" class="font-bold text-purple-600">0</span> / <span id="total-steps">0</span></p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 代码展示 -->
+        <div class="mt-6 glass-card rounded-2xl p-6 shadow-2xl">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <span class="w-8 h-8 bg-pink-500 text-white rounded-lg flex items-center justify-center text-sm">💻</span>
+                算法代码
+            </h2>
+            <pre class="bg-gray-900 text-gray-100 p-4 rounded-xl text-sm whitespace-pre-wrap break-words"><code id="code-display" class="mono">function lengthOfLongestSubstring(s) {
+    const map = new Map();
+    let left = 0;
+    let maxLen = 0;
+
+    for (let right = 0; right < s.length; right++) {
+        const char = s[right];
+
+        if (map.has(char) && map.get(char) >= left) {
+            left = map.get(char) + 1;
+        }
+
+        map.set(char, right);
+        maxLen = Math.max(maxLen, right - left + 1);
+    }
+
+    return maxLen;
+}</code></pre>
+        </div>
+
+        <!-- 结果展示 -->
+        <div id="result-container" class="mt-6 glass-card rounded-2xl p-6 shadow-2xl hidden">
+            <div class="text-center">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">🎉 算法执行完成！</h2>
+                <p class="text-lg text-gray-600 mb-2">输入字符串: <span class="mono font-semibold text-purple-600">"abcabcbb"</span></p>
+                <p class="text-lg text-gray-600 mb-4">最长无重复子串长度: <span id="final-result" class="text-4xl font-bold text-green-500">0</span></p>
+                <p class="text-gray-500">最长子串: <span id="longest-substring" class="mono text-xl text-purple-600 font-semibold"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 算法实现和可视化逻辑
+        const inputString = "abcabcbb";
+        let steps = [];
+        let currentStepIndex = 0;
+        let isPlaying = false;
+        let playInterval = null;
+
+        // 预计算所有步骤
+        function precomputeSteps() {
+            steps = [];
+            const map = new Map();
+            let left = 0;
+            let maxLen = 0;
+            let longestSub = "";
+            
+            steps.push({
+                type: 'init',
+                left: -1,
+                right: -1,
+                map: new Map(),
+                currentWindow: '',
+                windowLength: 0,
+                maxLen: 0,
+                message: '初始化：left = 0, right = 0, maxLen = 0, 哈希表为空',
+                highlightLines: [0, 1, 2]
+            });
+
+            for (let right = 0; right < inputString.length; right++) {
+                const char = inputString[right];
+                
+                steps.push({
+                    type: 'move-right',
+                    left: left,
+                    right: right,
+                    map: new Map(map),
+                    currentWindow: inputString.substring(left, right + 1),
+                    windowLength: right - left + 1,
+                    maxLen: maxLen,
+                    message: `快指针 right 移动到位置 ${right}，字符: '${char}'`,
+                    highlightLines: [4],
+                    currentChar: char
+                });
+
+                if (map.has(char) && map.get(char) >= left) {
+                    const oldLeft = left;
+                    left = map.get(char) + 1;
+                    steps.push({
+                        type: 'duplicate',
+                        left: left,
+                        right: right,
+                        map: new Map(map),
+                        currentWindow: inputString.substring(left, right + 1),
+                        windowLength: right - left + 1,
+                        maxLen: maxLen,
+                        message: `发现重复字符 '${char}'！将慢指针 left 从 ${oldLeft} 移动到 ${left}`,
+                        highlightLines: [6, 7],
+                        duplicateChar: char
+                    });
+                }
+
+                map.set(char, right);
+                
+                const prevMaxLen = maxLen;
+                maxLen = Math.max(maxLen, right - left + 1);
+                if (maxLen > prevMaxLen) {
+                    longestSub = inputString.substring(left, right + 1);
+                }
+
+                steps.push({
+                    type: 'update',
+                    left: left,
+                    right: right,
+                    map: new Map(map),
+                    currentWindow: inputString.substring(left, right + 1),
+                    windowLength: right - left + 1,
+                    maxLen: maxLen,
+                    longestSub: longestSub,
+                    message: `更新哈希表: '${char}' → ${right}${maxLen > prevMaxLen ? '，发现更长的子串！' : ''}`,
+                    highlightLines: [10, 11],
+                    updatedChar: char,
+                    isNewMax: maxLen > prevMaxLen
+                });
+            }
+
+            steps.push({
+                type: 'finish',
+                left: left,
+                right: inputString.length - 1,
+                map: map,
+                currentWindow: inputString.substring(left, inputString.length),
+                windowLength: inputString.length - left,
+                maxLen: maxLen,
+                longestSub: longestSub,
+                message: `算法执行完成！最长无重复子串长度为 ${maxLen}`,
+                highlightLines: [14]
+            });
+        }
+
+        // 初始化字符串显示
+        function initStringDisplay() {
+            const container = document.getElementById('string-container');
+            container.innerHTML = '';
+            
+            inputString.split('').forEach((char, index) => {
+                const charBox = document.createElement('div');
+                charBox.className = 'char-box flex flex-col items-center';
+                charBox.id = `char-${index}`;
+                charBox.innerHTML = `
+                    <div class="w-12 h-12 bg-gray-100 border-2 border-gray-200 rounded-xl flex items-center justify-center text-xl font-bold text-gray-700 mono">
+                        ${char}
+                    </div>
+                    <div class="text-xs text-gray-400 mt-1">${index}</div>
+                    <div id="pointer-left-${index}" class="text-blue-500 font-bold text-lg mt-1 opacity-0">↑</div>
+                    <div id="pointer-right-${index}" class="text-red-500 font-bold text-lg opacity-0">↑</div>
+                `;
+                container.appendChild(charBox);
+            });
+        }
+
+        // 更新显示
+        function updateDisplay(step) {
+            // 更新字符状态
+            for (let i = 0; i < inputString.length; i++) {
+                const charBox = document.getElementById(`char-${i}`).querySelector('div');
+                const leftPointer = document.getElementById(`pointer-left-${i}`);
+                const rightPointer = document.getElementById(`pointer-right-${i}`);
+                
+                // 重置样式
+                charBox.className = 'w-12 h-12 bg-gray-100 border-2 border-gray-200 rounded-xl flex items-center justify-center text-xl font-bold text-gray-700 mono transition-all duration-300';
+                leftPointer.classList.add('opacity-0');
+                leftPointer.classList.remove('slow-pointer');
+                rightPointer.classList.add('opacity-0');
+                rightPointer.classList.remove('fast-pointer');
+                
+                // 窗口内的字符
+                if (i >= step.left && i <= step.right) {
+                    charBox.className = 'w-12 h-12 bg-green-100 border-2 border-green-400 rounded-xl flex items-center justify-center text-xl font-bold text-green-700 mono transition-all duration-300';
+                }
+                
+                // 新最大长度时高亮
+                if (step.isNewMax && i >= step.left && i <= step.right) {
+                    charBox.className = 'w-12 h-12 bg-yellow-100 border-2 border-yellow-400 rounded-xl flex items-center justify-center text-xl font-bold text-yellow-700 mono transition-all duration-300 scale-110';
+                }
+                
+                // 重复字符
+                if (step.duplicateChar && inputString[i] === step.duplicateChar) {
+                    charBox.className = 'w-12 h-12 bg-red-100 border-2 border-red-400 rounded-xl flex items-center justify-center text-xl font-bold text-red-700 mono transition-all duration-300';
+                }
+                
+                // 更新字符
+                if (step.updatedChar && inputString[i] === step.updatedChar && i === step.right) {
+                    charBox.className = 'w-12 h-12 bg-purple-100 border-2 border-purple-400 rounded-xl flex items-center justify-center text-xl font-bold text-purple-700 mono transition-all duration-300';
+                }
+            }
+            
+            // 显示指针
+            if (step.left >= 0) {
+                const leftPointer = document.getElementById(`pointer-left-${step.left}`);
+                leftPointer.classList.remove('opacity-0');
+                leftPointer.classList.add('slow-pointer');
+            }
+            if (step.right >= 0) {
+                const rightPointer = document.getElementById(`pointer-right-${step.right}`);
+                rightPointer.classList.remove('opacity-0');
+                rightPointer.classList.add('fast-pointer');
+            }
+            
+            // 更新当前窗口
+            const windowContainer = document.getElementById('current-window');
+            if (step.currentWindow) {
+                windowContainer.innerHTML = step.currentWindow.split('').map((char, idx) => `
+                    <div class="w-10 h-10 bg-green-100 border-2 border-green-400 rounded-lg flex items-center justify-center text-lg font-bold text-green-700 mono ${step.isNewMax ? 'bg-yellow-100 border-yellow-400 text-yellow-700' : ''}">
+                        ${char}
+                    </div>
+                `).join('');
+            } else {
+                windowContainer.innerHTML = '<span class="text-gray-400">空</span>';
+            }
+            
+            // 更新长度
+            document.getElementById('window-length').textContent = step.windowLength;
+            document.getElementById('max-length').textContent = step.maxLen;
+            
+            // 更新哈希表
+            const hashTableContainer = document.getElementById('hash-table');
+            if (step.map.size === 0) {
+                hashTableContainer.innerHTML = '<span class="text-gray-400">空</span>';
+            } else {
+                hashTableContainer.innerHTML = '';
+                step.map.forEach((value, key) => {
+                    const item = document.createElement('div');
+                    item.className = 'hash-table-item bg-orange-50 border-2 border-orange-300 rounded-xl px-4 py-2 flex items-center gap-2';
+                    item.innerHTML = `
+                        <span class="font-bold text-orange-700 mono">'${key}'</span>
+                        <span class="text-gray-400">→</span>
+                        <span class="font-bold text-orange-700 mono">${value}</span>
+                    `;
+                    hashTableContainer.appendChild(item);
+                });
+            }
+            
+            // 更新状态信息
+            document.getElementById('status-message').textContent = step.message;
+            document.getElementById('step-count').textContent = currentStepIndex + 1;
+            
+            // 完成时显示结果
+            if (step.type === 'finish') {
+                document.getElementById('result-container').classList.remove('hidden');
+                document.getElementById('final-result').textContent = step.maxLen;
+                document.getElementById('longest-substring').textContent = `"${step.longestSub}"`;
+                stopPlay();
+            } else {
+                document.getElementById('result-container').classList.add('hidden');
+            }
+        }
+
+        // 下一步
+        function nextStep() {
+            if (currentStepIndex < steps.length - 1) {
+                currentStepIndex++;
+                updateDisplay(steps[currentStepIndex]);
+                updateButtonStates();
+            }
+        }
+
+        // 重置
+        function reset() {
+            stopPlay();
+            currentStepIndex = 0;
+            updateDisplay(steps[0]);
+            updateButtonStates();
+            document.getElementById('result-container').classList.add('hidden');
+        }
+
+        // 开始/暂停播放
+        function togglePlay() {
+            if (isPlaying) {
+                stopPlay();
+            } else {
+                startPlay();
+            }
+        }
+
+        function startPlay() {
+            if (currentStepIndex >= steps.length - 1) {
+                reset();
+            }
+            isPlaying = true;
+            updateButtonStates();
+            const speed = parseInt(document.getElementById('speed-slider').value);
+            playInterval = setInterval(() => {
+                if (currentStepIndex < steps.length - 1) {
+                    nextStep();
+                } else {
+                    stopPlay();
+                }
+            }, speed);
+        }
+
+        function stopPlay() {
+            isPlaying = false;
+            if (playInterval) {
+                clearInterval(playInterval);
+                playInterval = null;
+            }
+            updateButtonStates();
+        }
+
+        function updateButtonStates() {
+            const btnStart = document.getElementById('btn-start');
+            const btnStep = document.getElementById('btn-step');
+            
+            btnStart.textContent = isPlaying ? '⏸ 暂停' : '▶ 开始';
+            btnStart.className = isPlaying 
+                ? 'flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-4 rounded-xl transition-all transform hover:scale-105 shadow-lg'
+                : 'flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-xl transition-all transform hover:scale-105 shadow-lg';
+            
+            btnStep.disabled = isPlaying || currentStepIndex >= steps.length - 1;
+        }
+
+        // 初始化
+        function init() {
+            precomputeSteps();
+            initStringDisplay();
+            document.getElementById('total-steps').textContent = steps.length;
+            updateDisplay(steps[0]);
+            
+            // 事件绑定
+            document.getElementById('btn-start').addEventListener('click', togglePlay);
+            document.getElementById('btn-reset').addEventListener('click', reset);
+            document.getElementById('btn-step').addEventListener('click', nextStep);
+            document.getElementById('speed-slider').addEventListener('input', () => {
+                if (isPlaying) {
+                    stopPlay();
+                    startPlay();
+                }
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>

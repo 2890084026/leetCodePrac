@@ -30,7 +30,7 @@
 //   let res = []
 //   for (i = 0; i < sortednums.length; i++) {
 //     if (sortednums[i] == sortednums[i - 1]) continue
-//     let left = i + 1, //这里左指针必须等i+1 确保三个数据分别取自数组不同位置
+//     let left = i + 1, ////这里左指针必须等i+1 确保三个数据分别取自数组不同位置
 //       right = sortednums.length - 1
 //     sum = sortednums[left] + sortednums[right] + sortednums[i]
 //     while (left < right) {
@@ -40,8 +40,8 @@
 //         left++
 //       } else {
 //         res.push([nums[i], nums[left], nums[right]])
-//         while (left < right && nums[left] == nums[left + 1]) left++
-//         while (left < right && nums[right] == nums[right - 1]) right--
+//         while (left < right && nums[left] == nums[left + 1]) left++   ////这里要注意left的下一项是left+1
+//         while (left < right && nums[right] == nums[right - 1]) right--////right的下一项是right--
 //         left++
 //         right--
 //       }
