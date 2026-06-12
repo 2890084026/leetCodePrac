@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>字符串单词反转 双指针动画（代码行高亮）</title>
+  <style>
+    body { font-family: "Microsoft YaHei", Arial; padding: 20px; background: #111; color: #fff; }
+    .container { max-width: 1000px; margin: 0 auto; }
+    h2 { text-align: center; }
+    .info { margin: 12px 0; font-size: 16px; line-height: 1.8; }
+    .arr-box { display: flex; gap: 6px; margin: 30px 0; justify-content: center; flex-wrap: wrap; }
+    .cell {
+      width: 48px; height: 48px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; border-radius: 6px;
+      background: #333; border: 2px solid #555;
+    }
+    .read { border-color: #4cf; box-shadow: 0 0 8px #4cf; }    /* 左指针 - 蓝色 */
+    .write { border-color: #f84; box-shadow: 0 0 8px #f84; }   /* 右指针 - 橙色 */
+    .write-read { border-color: #ff0; box-shadow: 0 0 8px #ff0; } /* 指针重合 - 黄色 */
+    .word { border-color: #a4f; box-shadow: 0 0 8px #a4f; }    /* 单词范围 - 紫色 */
+    .btn-group { margin: 15px 0; text-align: center; }
+    .btn-group button {
+      padding: 8px 16px; font-size: 15px;
+      margin: 0 6px; cursor: pointer;
+      background: #236; color: #fff; border: none; border-radius: 4px;
+    }
+    .btn-group button:disabled { background: #444; cursor: not-allowed; }
+    /* 代码区域样式 */
+    .code-wrap {
+      margin-top: 30px;
+      background: #1a1a1a;
+      padding: 16px;
+      border-radius: 8px;
+      border: 1px solid #444;
+    }
+    .code-title { font-size:18px; margin-bottom:10px; color:#8cf; }
+    pre { font-family: Consolas,monospace; font-size:14px; line-height:1.6; margin:0; }
+    .code-line { display:block; padding:2px 6px; border-radius:3px; }
+    .active-line { background:#305; } /* 当前执行行高亮 */
+  </style>
+</head>
+<body>
+<div class="container">
+  <h2>字符串中的单词反转 双指针动画演示</h2>
+  <div class="info">
+    <div>left 指针：<span style="color:#4cf">蓝色边框</span> 左边界定位</div>
+    <div>right 指针：<span style="color:#f84">橙色边框</span> 右边界定位</div>
+    <div>left与right重合：<span style="color:#ff0">黄色边框</span></div>
+    <div>单词范围：<span style="color:#a4f">紫色边框</span></div>
+    <div id="stepText">当前步骤：等待操作</div>
+    <div id="varText"></div>
+  </div>
+
+  <div class="arr-box" id="arrWrap"></div>
+
+  <div class="btn-group">
+    <button id="autoPlayBtn">自动播放</button>
+    <button id="pauseBtn" disabled>暂停</button>
+    <button id="nextStepBtn">单步下一步</button>
+    <button id="resetBtn">重置</button>
+  </div>
+
+  <!-- 代码展示区域 -->
+  <div class="code-wrap">
+    <div class="code-title">算法源码（当前执行行会紫色高亮）</div>
+    <pre id="codeBox"></pre>
+  </div>
+</div>
+
+<script>
+// 原始测试字符串（转为字符数组）
+const originStr = "the sky is blue";
+let chars = originStr.split('');
+let left = 0;
+let right = chars.length - 1;
+let stepQueue = [];
+let timer = null;
+let curStepIdx = 0;
+let isPlaying = false;
+
+// 源码文本 + 每一行对应编号（用于匹配高亮）
+const codeSource = [
+  { line:1, text:"function reverseWords(s) {" },
+  { line:2, text:"  // 转为字符数组方便原地操作" },
+  { line:3, text:"  const chars = s.split('');" },
+  { line:4, text:"  let n = chars.length;" },
+  { line:5, text:"  let left = 0, right = n - 1;" },
+  { line:6, text:"  " },
+  { line:7, text:"  // 1. 反转整个字符串" },
+  { line:8, text:"  while (left < right) {" },
+  { line:9, text:"    [chars[left], chars[right]] = [chars[right], chars[left]];" },
+  { line:10,text:"    left++;" },
+  { line:11,text:"    right--;" },
+  { line:12,text:"  }" },
+  { line:13,text:"  " },
+  { line:14,text:"  // 2. 反转每个单词" },
+  { line:15,text:"  let start = 0;" },
+  { line:16,text:"  for (let i = 0; i <= n; i++) {" },
+  { line:17,text:"    if (i === n || chars[i] === ' ') {" },
+  { line:18,text:"      let end = i - 1;" },
+  { line:19,text:"      while (start < end) {" },
+  { line:20,text:"        [chars[start], chars[end]] = [chars[end], chars[start]];" },
+  { line:21,text:"        start++;" },
+  { line:22,text:"        end--;" },
+  { line:23,text:"      }" },
+  { line:24,text:"      start = i + 1;" },
+  { line:25,text:"    }" },
+  { line:26,text:"  }" },
+  { line:27,text:"  " },
+  { line:28,text:"  // 3. 清理多余空格并返回" },
+  { line:29,text:"  return chars.join('').replace(/\\s+/g, ' ').trim();" },
+  { line:30,text:"}" }
+];
+
+// 构建步骤队列（核心：记录每一步的状态和代码行）
+function buildSteps() {
+  stepQueue = [];
+  chars = originStr.split('');
+  left = 0;
+  right = chars.length - 1;
+  let tempChars = [...chars];
+
+  // 步骤1：初始化
+  stepQueue.push({
+    desc: "初始化：转为字符数组，left=0，right=" + right,
+    l: left, r: right, arr: [...tempChars], 
+    stage: "init", wordStart: -1, wordEnd: -1, codeLine:5
+  });
+
+  // 步骤2：反转整个字符串（记录每一步交换）
+  let reverseLeft = 0, reverseRight = tempChars.length - 1;
+  stepQueue.push({
+    desc: "开始反转整个字符串",
+    l: reverseLeft, r: reverseRight, arr: [...tempChars],
+    stage: "reverse-all", wordStart: -1, wordEnd: -1, codeLine:8
+  });
+  
+  while (reverseLeft < reverseRight) {
+    // 交换字符
+    [tempChars[reverseLeft], tempChars[reverseRight]] = [tempChars[reverseRight], tempChars[reverseLeft]];
+    stepQueue.push({
+      desc: `交换位置 ${reverseLeft} 和 ${reverseRight} 的字符`,
+      l: reverseLeft, r: reverseRight, arr: [...tempChars],
+      stage: "reverse-all", wordStart: -1, wordEnd: -1, codeLine:9
+    });
+    // 移动指针
+    reverseLeft++;
+    reverseRight--;
+    stepQueue.push({
+      desc: `指针移动：left=${reverseLeft}，right=${reverseRight}`,
+      l: reverseLeft, r: reverseRight, arr: [...tempChars],
+      stage: "reverse-all", wordStart: -1, wordEnd: -1, codeLine:10
+    });
+  }
+
+  // 步骤3：反转每个单词
+  let start = 0;
+  let n = tempChars.length;
+  stepQueue.push({
+    desc: "开始反转每个独立单词",
+    l: start, r: -1, arr: [...tempChars],
+    stage: "reverse-word", wordStart: -1, wordEnd: -1, codeLine:15
+  });
+
+  for (let i = 0; i <= n; i++) {
+    if (i === n || tempChars[i] === ' ') {
+      let end = i - 1;
+      stepQueue.push({
+        desc: `定位单词范围：start=${start}，end=${end}`,
+        l: start, r: end, arr: [...tempChars],
+        stage: "reverse-word", wordStart: start, wordEnd: end, codeLine:18
+      });
+
+      // 反转当前单词
+      let wordLeft = start, wordRight = end;
+      while (wordLeft < wordRight) {
+        [tempChars[wordLeft], tempChars[wordRight]] = [tempChars[wordRight], tempChars[wordLeft]];
+        stepQueue.push({
+          desc: `反转单词：交换 ${wordLeft} 和 ${wordRight} 的字符`,
+          l: wordLeft, r: wordRight, arr: [...tempChars],
+          stage: "reverse-word", wordStart: start, wordEnd: end, codeLine:20
+        });
+        wordLeft++;
+        wordRight--;
+      }
+
+      start = i + 1;
+      stepQueue.push({
+        desc: `更新单词起始位置：start=${start}`,
+        l: start, r: -1, arr: [...tempChars],
+        stage: "reverse-word", wordStart: -1, wordEnd: -1, codeLine:24
+      });
+    }
+  }
+
+  // 步骤4：最终结果
+  stepQueue.push({
+    desc: "处理完成：清理空格并拼接为最终字符串",
+    l: -1, r: -1, arr: [...tempChars],
+    stage: "finish", wordStart: -1, wordEnd: -1, codeLine:29
+  });
+}
+
+// DOM元素
+const arrWrap = document.getElementById('arrWrap');
+const stepText = document.getElementById('stepText');
+const varText = document.getElementById('varText');
+const autoPlayBtn = document.getElementById('autoPlayBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const nextStepBtn = document.getElementById('nextStepBtn');
+const resetBtn = document.getElementById('resetBtn');
+const codeBox = document.getElementById('codeBox');
+
+// 渲染数组格子
+function renderUI(s) {
+  arrWrap.innerHTML = '';
+  const currentArr = s.arr;
+  for(let i=0; i<currentArr.length; i++) {
+    const div = document.createElement('div');
+    div.className = 'cell';
+    div.textContent = currentArr[i] === ' ' ? '·' : currentArr[i]; // 空格用点显示更直观
+    
+    // 标记指针位置
+    if(i === s.l && i === s.r) div.classList.add('write-read');
+    else if(i === s.l) div.classList.add('read');
+    else if(i === s.r) div.classList.add('write');
+    
+    // 标记单词范围
+    if(s.wordStart !== -1 && i >= s.wordStart && i <= s.wordEnd) {
+      div.classList.add('word');
+    }
+    
+    arrWrap.appendChild(div);
+  }
+}
+
+// 渲染代码并高亮当前行
+function renderCode(activeLineNum) {
+  codeBox.innerHTML = '';
+  codeSource.forEach(item => {
+    const span = document.createElement('span');
+    span.className = 'code-line';
+    span.textContent = item.text;
+    if(item.line === activeLineNum) span.classList.add('active-line');
+    codeBox.appendChild(span);
+  });
+}
+
+// 渲染当前一步全部视图
+function renderCurrentStep() {
+  if(curStepIdx >= stepQueue.length) return;
+  const s = stepQueue[curStepIdx];
+  
+  // 更新状态文本
+  stepText.textContent = `步骤 ${curStepIdx+1}/${stepQueue.length}：${s.desc}`;
+  let varHtml = '';
+  if(s.l !== -1) varHtml += `left=${s.l} &nbsp;&nbsp;`;
+  if(s.r !== -1) varHtml += `right=${s.r} &nbsp;&nbsp;`;
+  if(s.wordStart !== -1) varHtml += `单词范围=[${s.wordStart},${s.wordEnd}]`;
+  varText.innerHTML = varHtml || '无指针操作';
+  
+  // 渲染UI和代码
+  renderUI(s);
+  renderCode(s.codeLine);
+}
+
+// 单步前进
+function goNextStep() {
+  if(curStepIdx >= stepQueue.length) return;
+  renderCurrentStep();
+  curStepIdx++;
+  
+  // 最后一步禁用播放
+  if(curStepIdx >= stepQueue.length) {
+    stopAutoPlay();
+    autoPlayBtn.disabled = true;
+    nextStepBtn.disabled = true;
+  }
+}
+
+// 自动播放
+function startAutoPlay() {
+  if(isPlaying) return;
+  if(stepQueue.length === 0) buildSteps();
+  isPlaying = true;
+  autoPlayBtn.disabled = true;
+  pauseBtn.disabled = false;
+  timer = setInterval(() => {
+    if(curStepIdx >= stepQueue.length) {
+      stopAutoPlay();
+      return;
+    }
+    goNextStep();
+  }, 1200); // 放慢速度，便于观察
+}
+
+// 暂停
+function stopAutoPlay() {
+  clearInterval(timer);
+  timer = null;
+  isPlaying = false;
+  autoPlayBtn.disabled = false;
+  pauseBtn.disabled = true;
+}
+
+// 重置全部
+function resetAll() {
+  stopAutoPlay();
+  curStepIdx = 0;
+  stepQueue = [];
+  chars = originStr.split('');
+  left = 0;
+  right = chars.length - 1;
+  
+  // 重置文本和UI
+  stepText.textContent = "当前步骤：等待操作";
+  varText.innerHTML = "";
+  renderUI({ arr: chars, l: -1, r: -1, wordStart: -1, wordEnd: -1 });
+  renderCode(0);
+  
+  // 启用按钮
+  autoPlayBtn.disabled = false;
+  nextStepBtn.disabled = false;
+}
+
+// 按钮事件
+autoPlayBtn.onclick = startAutoPlay;
+pauseBtn.onclick = stopAutoPlay;
+nextStepBtn.onclick = goNextStep;
+resetBtn.onclick = resetAll;
+
+// 初始渲染
+buildSteps(); // 预构建步骤
+renderUI({ arr: chars, l: -1, r: -1, wordStart: -1, wordEnd: -1 });
+renderCode(0);
+</script>
+</body>
+</html>

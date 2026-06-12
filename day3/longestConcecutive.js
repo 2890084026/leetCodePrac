@@ -48,6 +48,7 @@
 //   }
 //   return maxLen
 // }
+
 const nums = [100, 4, 200, 1, 3, 2, 5]
 function longestC(nums) {
   let numSet = new Set(nums)

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>LeetCode 84 柱状图最大矩形 单调栈图解</title>
+    <style>
+        *{box-sizing: border-box;margin:0;padding:0;font-family: "Microsoft Yahei",sans-serif}
+        body{padding:20px;background:#f5f7fa;color:#222}
+        .container{max-width:1200px;margin:0 auto}
+        h1{text-align:center;margin-bottom:16px;color:#165DFF}
+        .control-bar{display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+        button{padding:8px 16px;border:none;border-radius:6px;background:#165DFF;color:#fff;cursor:pointer;font-size:14px}
+        button:disabled{background:#b4c8f5;cursor:not-allowed}
+        .info-panel{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px;margin-bottom:12px}
+        .row{display:flex;gap:24px}
+        .canvas-box{flex:2}
+        .state-box{flex:1;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px;height:520px;overflow-y:auto}
+        canvas{border:1px solid #dcdfe6;background:#fff;border-radius:6px}
+        .step-desc{margin-top:8px;line-height:1.6}
+        .stack-item{display:inline-block;padding:4px 10px;margin:4px;background:#e8f3ff;border:1px solid #94bfff;border-radius:4px}
+        .max-area{color:#f53f3f;font-weight:bold}
+        .code-block{background:#1e1e1e;color:#ddd;padding:12px;border-radius:6px;margin-top:16px;white-space:pre;overflow-x:auto;font-size:13px}
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>LeetCode 84 柱状图中最大矩形 - 单调栈分步可视化</h1>
+    <div class="control-bar">
+        <button id="initBtn">重置样例 [2,1,5,6,2,3]</button>
+        <button id="prevBtn" disabled>上一步</button>
+        <button id="nextBtn">下一步</button>
+        <span>当前步数：<span id="stepNum">0</span></span>
+        <span class="max-area">当前最大面积：<span id="maxArea">0</span></span>
+    </div>
+    <div class="row">
+        <div class="canvas-box">
+            <canvas id="canvas" width="800" height="480"></canvas>
+            <div class="info-panel step-desc" id="descBox">
+                初始化：数组末尾补0，强制栈内所有元素出栈计算面积。
+                单调栈规则：栈内保存柱子下标，对应高度单调递增；遇到更小柱子则弹出栈顶，以弹出柱子为高计算矩形面积。
+            </div>
+        </div>
+        <div class="state-box">
+            <h3>运行状态</h3>
+            <p>原始数组：<span id="arrText"></span></p>
+            <p>带哨兵数组：<span id="arrZeroText"></span></p>
+            <p style="margin-top:10px;">栈内下标：<div id="stackBox"></div></p>
+            <p style="margin-top:10px;">每次计算面积记录：</p>
+            <div id="calcLog"></div>
+        </div>
+    </div>
+    <div class="code-block">
+// LeetCode84 JS单调栈标准解法
+function largestRectangleArea(heights) {
+    const stack = [];
+    let maxArea = 0;
+    // 末尾补哨兵0
+    const arr = [...heights, 0];
+    for(let i = 0; i < arr.length; i++){
+        // 当前高度小于栈顶高度，弹出计算
+        while(stack.length && arr[i] < arr[stack.at(-1)]){
+            const curIdx = stack.pop();
+            const h = arr[curIdx];
+            const left = stack.length ? stack.at(-1) : -1;
+            const w = i - left - 1;
+            maxArea = Math.max(maxArea, h * w);
+        }
+        stack.push(i);
+    }
+    return maxArea;
+}
+// 样例调用 largestRectangleArea([2,1,5,6,2,3])
+    </div>
+</div>
+
+<script>
+    // 全局数据
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const initHeights = [2,1,5,6,2,3];
+    let heights = [];
+    let arr = [];
+    let stepList = [];
+    let curStep = 0;
+    let maxAreaGlobal = 0;
+
+    // DOM元素
+    const stepNumEl = document.getElementById('stepNum');
+    const maxAreaEl = document.getElementById('maxArea');
+    const descBox = document.getElementById('descBox');
+    const arrText = document.getElementById('arrText');
+    const arrZeroText = document.getElementById('arrZeroText');
+    const stackBox = document.getElementById('stackBox');
+    const calcLog = document.getElementById('calcLog');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    // 生成完整步骤记录
+    function generateSteps(base){
+        stepList = [];
+        maxAreaGlobal = 0;
+        const stack = [];
+        const a = [...base, 0];
+        arr = a;
+        heights = base;
+        // 初始状态
+        stepList.push({
+            type: 'init',
+            stack: [...stack],
+            i: -1,
+            popIdx: null,
+            h: 0, w:0, area:0,
+            desc: '初始化，数组末尾添加哨兵0 [0]，准备遍历所有柱子。栈为空。',
+            currentMax: 0
+        });
+        for(let i=0; i<a.length; i++){
+            // 入栈前记录i指向
+            stepList.push({
+                type: 'point',
+                stack: [...stack],
+                i: i,
+                popIdx: null,
+                h:0,w:0,area:0,
+                desc: `遍历下标 i=${i}，当前柱子高度 h=${a[i]}，检查是否小于栈顶高度`,
+                currentMax: maxAreaGlobal
+            })
+            // 循环弹出
+            while(stack.length && a[i] < a[stack.at(-1)]){
+                const curIdx = stack.pop();
+                const h = a[curIdx];
+                const left = stack.length ? stack.at(-1) : -1;
+                const w = i - left - 1;
+                const area = h * w;
+                if(area > maxAreaGlobal) maxAreaGlobal = area;
+                stepList.push({
+                    type: 'calc',
+                    stack: [...stack],
+                    i:i,
+                    popIdx: curIdx,
+                    h:h,w:w,area:area,
+                    desc: `弹出栈顶下标 ${curIdx}，高度=${h}；左边界=${left}，右边界=${i}，宽度=${w}，矩形面积=${h}×${w}=${area}。当前最大面积：${maxAreaGlobal}`,
+                    currentMax: maxAreaGlobal
+                })
+            }
+            stack.push(i);
+            stepList.push({
+                type: 'push',
+                stack: [...stack],
+                i:i,
+                popIdx:null,
+                h:0,w:0,area:0,
+                desc: `下标 i=${i} 入栈，栈现在：[${stack.join(',')}]`,
+                currentMax: maxAreaGlobal
+            })
+        }
+        // 结束状态
+        stepList.push({
+            type: 'end',
+            stack: [...stack],
+            i: arr.length-1,
+            popIdx:null,
+            h:0,w:0,area:0,
+            desc: '遍历完成！哨兵0清空栈内所有元素，全部矩形计算完毕。',
+            currentMax: maxAreaGlobal
+        })
+    }
+
+    // 绘制画布
+    function render(state){
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        const padding = 40;
+        const barW = 60;
+        const baseY = canvas.height - padding;
+        const maxH = Math.max(...arr);
+        const scale = (canvas.height - padding*2) / maxH;
+        // 绘制坐标轴
+        ctx.strokeStyle='#999';
+        ctx.lineWidth=1;
+        ctx.beginPath();
+        ctx.moveTo(padding, baseY);
+        ctx.lineTo(padding + arr.length*barW, baseY);
+        ctx.stroke();
+        // 遍历画柱子
+        for(let idx=0; idx<arr.length; idx++){
+            const x = padding + idx*barW + 8;
+            const h = arr[idx] * scale;
+            const y = baseY - h;
+            // 高亮逻辑
+            let fill = '#7cb305';
+            if(state.popIdx === idx) fill = '#f53f3f'; // 当前弹出柱子红色
+            if(state.i === idx && state.type==='point') fill='#165DFF'; // 当前指针蓝色
+            ctx.fillStyle = fill;
+            ctx.fillRect(x, y, barW-16, h);
+            ctx.strokeStyle='#333';
+            ctx.strokeRect(x, y, barW-16, h);
+            // 文字标注下标、高度
+            ctx.fillStyle='#222';
+            ctx.font='14px sans-serif';
+            ctx.fillText(`i=${idx}`, x, baseY+18);
+            ctx.fillText(`${arr[idx]}`, x+10, y-6);
+        }
+        // 绘制当前计算矩形框
+        if(state.type==='calc' && state.popIdx!==null){
+            const cur = state.popIdx;
+            const left = state.stack.length ? state.stack.at(-1) : -1;
+            const w = state.w;
+            const h = state.h;
+            const rectX = padding + (left+1)*barW + 8;
+            const rectW = w * (barW-16) + (w-1)*16;
+            const rectH = h * scale;
+            const rectY = baseY - rectH;
+            ctx.strokeStyle='#f53f3f';
+            ctx.lineWidth=3;
+            ctx.setLineDash([6,4]);
+            ctx.strokeRect(rectX, rectY, rectW, rectH);
+            ctx.setLineDash([]);
+        }
+    }
+
+    // 更新右侧状态面板
+    function updatePanel(state){
+        stepNumEl.innerText = curStep;
+        maxAreaEl.innerText = state.currentMax;
+        descBox.innerText = state.desc;
+        arrText.innerText = `[${heights.join(',')}]`;
+        arrZeroText.innerText = `[${arr.join(',')}]`;
+        // 渲染栈
+        stackBox.innerHTML = '';
+        state.stack.forEach(num=>{
+            const span = document.createElement('span');
+            span.className='stack-item';
+            span.innerText = num;
+            stackBox.appendChild(span);
+        })
+        // 计算日志追加
+        if(state.type==='calc'){
+            const p = document.createElement('p');
+            p.style.color='#f53f3f';
+            p.innerText = `计算：下标${state.popIdx} 面积=${state.area}`;
+            calcLog.appendChild(p);
+        }
+        // 按钮状态
+        prevBtn.disabled = curStep <= 0;
+        nextBtn.disabled = curStep >= stepList.length-1;
+    }
+
+    // 单步刷新
+    function refresh(){
+        const state = stepList[curStep];
+        render(state);
+        updatePanel(state);
+    }
+
+    // 初始化重置
+    function reset(){
+        curStep = 0;
+        calcLog.innerHTML = '';
+        generateSteps(initHeights);
+        refresh();
+    }
+
+    // 绑定按钮
+    document.getElementById('initBtn').onclick = reset;
+    nextBtn.onclick = ()=>{
+        if(curStep < stepList.length-1){
+            curStep++;
+            refresh();
+        }
+    }
+    prevBtn.onclick = ()=>{
+        if(curStep > 0){
+            curStep--;
+            refresh();
+        }
+    }
+
+    // 页面加载自动初始化
+    reset();
+</script>
+</body>
+</html>
