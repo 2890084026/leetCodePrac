@@ -1,44 +1,56 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
-</head>
+  </head>
 
-<body>
+  <body>
     66622
     <script>
-        nums = [1, 3, -1, -3, 5, 3, 6, 7], k = 3
-        function maxSlidingWindow(nums, k) {
-            const q = []; // 双端队列，存下标
-            const res = [];
+      const arr = [1, 0, 2, 3, 0, 4, 5, 0];
+      const arr1 = [1, 0, 2, 3, 0, 4, 5];
+      const arr3 = [0, 0, 0, 0, 0, 0, 0];
 
-            for (let i = 0; i < nums.length; i++) {
-                // 1. 移除超出窗口左边界的元素
-                while (q.length && q[0] < i - k + 1) {
-                    q.shift();
-                }
+      function duplicateZeros(arr) {
+        let des = 0; // 已消费的槽位数
+        let cur = 0; // 最后处理的原始索引
 
-                // 2. 移除比当前元素小的队尾（不可能成为最大值）
-                while (q.length && nums[i] >= nums[q[q.length - 1]]) {
-                    q.pop();
-                }
-
-                // 3. 加入当前元素下标
-                q.push(i);
-
-                // 4. 窗口形成后，记录队首最大值
-                if (i >= k - 1) {
-                    res.push(nums[q[0]]);
-                }
-            }
-
-            return res;
+        // 第一轮：找到截断位置
+        for (let i = 0; i < arr.length; i++) {
+          if (arr[i]) {
+            des += 1;
+          } else {
+            des += 2;
+          }
+          if (des >= arr.length) {
+            cur = i;
+            break;
+          }
         }
-        maxSlidingWindow(nums, k)
-    </script>
-</body>
 
+        // 边界：最后一个 0 只能放一份拷贝
+        if (des > arr.length) {
+          arr[arr.length - 1] = 0;
+          des = arr.length - 1;
+          cur--;
+        }
+
+        // 第二轮：从后往前填充
+        for (let i = cur; i >= 0; i--) {
+          if (arr[i]) {
+            arr[--des] = arr[i];
+          } else {
+            arr[--des] = 0;
+            arr[--des] = 0;
+          }
+        }
+
+        return arr;
+      }
+
+      console.log(duplicateZeros(arr));
+    </script>
+  </body>
 </html>

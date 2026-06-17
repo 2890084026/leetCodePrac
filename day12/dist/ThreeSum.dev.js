@@ -55,9 +55,10 @@ var threeSum = function threeSum(nums) {
   nums.sort(function (a, b) {
     return a - b;
   });
-  console.log(nums, 'nums');
 
   for (i = 0; i < len; i++) {
+    if (nums[i] > 0) break; // 当前数大于0，后面全部更大，不可能凑和为0
+
     if (nums[i] == nums[i - 1]) continue;
     var left = i + 1,
         right = len - 1;

@@ -54,36 +54,37 @@
 // }
 
 var threeSum = function (nums) {
-  let len = nums.length
-  let res = []
-  nums.sort((a, b) => a - b)
-  console.log(nums, 'nums')
+  let len = nums.length;
+  let res = [];
+  nums.sort((a, b) => a - b);
 
   for (i = 0; i < len; i++) {
-    if (nums[i] == nums[i - 1]) continue
+    if (nums[i] > 0) break;
+    // 当前数大于0，后面全部更大，不可能凑和为0
+    if (nums[i] == nums[i - 1]) continue;
     let left = i + 1,
-      right = len - 1
+      right = len - 1;
 
     while (left < right) {
-      let sum = nums[i] + nums[left] + nums[right]
+      let sum = nums[i] + nums[left] + nums[right];
       if (sum > 0) {
-        right--
+        right--;
       } else if (sum < 0) {
-        left++
+        left++;
       } else {
-        res.push([nums[i], nums[left], nums[right]])
-        while (left < right && nums[left] == nums[left + 1]) left++
-        while (left < right && nums[right] == nums[right - 1]) right--
-        left++
-        right--
+        res.push([nums[i], nums[left], nums[right]]);
+        while (left < right && nums[left] == nums[left + 1]) left++;
+        while (left < right && nums[right] == nums[right - 1]) right--;
+        left++;
+        right--;
       }
     }
   }
-  return res
-}
+  return res;
+};
 // console.log(threeSum([-1, 0, 1, 2, -1, -4]))
 // 输出 [[-1,-1,2],[-1,0,1]]
 
 // console.log(threeSum([0, 0, 0, 0]))
 // 输出 [[0,0,0]]
-console.log(threeSum([-100, -70, -60, 110, 120, 130, 160]))
+console.log(threeSum([-100, -70, -60, 110, 120, 130, 160]));
