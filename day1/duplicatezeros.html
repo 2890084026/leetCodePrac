@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>Duplicate Zeros 三种算法可视化-代码行高亮</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Microsoft Yahei", sans-serif;
+    }
+    body {
+      background: #f5f7fa;
+      padding: 30px;
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      color: #222;
+      margin-bottom: 24px;
+      font-size: 26px;
+    }
+    .tab-wrap {
+      margin-bottom: 20px;
+    }
+    .tab-buttons {
+      display: flex;
+      gap: 6px;
+      border-bottom: 2px solid #dde1e7;
+    }
+    .tab-btn {
+      padding: 12px 20px;
+      border: none;
+      background: transparent;
+      font-size: 16px;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      border-bottom-color: #2563eb;
+      color: #2563eb;
+      font-weight: bold;
+    }
+    .tab-content {
+      display: none;
+      padding: 20px 0;
+    }
+    .tab-content.show {
+      display: block;
+    }
+    .control-panel {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .control-panel input {
+      padding: 8px 12px;
+      width: 320px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 15px;
+    }
+    button.operate {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      background: #2563eb;
+      color: white;
+      cursor: pointer;
+    }
+    button.operate.reset {
+      background: #6b7280;
+    }
+    button.operate.step {
+      background: #059669;
+    }
+    button.operate:disabled {
+      background: #cccccc !important;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+    .speed-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .array-box {
+      margin: 24px 0;
+    }
+    .array-title {
+      font-size: 16px;
+      margin-bottom: 10px;
+      color: #333;
+    }
+    .array-container {
+      display: flex;
+      gap: 6px;
+      min-height: 90px;
+      align-items: flex-end;
+    }
+    .array-item {
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: white;
+      border: 2px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 20px;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+    .array-item.zero {
+      background: #fef3c7;
+      border-color: #f59e0b;
+    }
+    .array-item.mark-cur {
+      box-shadow: 0 0 0 3px #2563eb;
+    }
+    .array-item.mark-des {
+      box-shadow: 0 0 0 3px #dc2626;
+    }
+    .array-item.mark-zero-copy {
+      background: #dcfce7;
+      border-color: #16a34a;
+    }
+    .index-label {
+      position: absolute;
+      bottom: -22px;
+      font-size: 12px;
+      color: #666;
+    }
+    .log-box {
+      margin-top: 20px;
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 16px;
+      border-radius: 8px;
+      min-height: 160px;
+      max-height: 240px;
+      overflow-y: auto;
+      font-family: Consolas, monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    /* 代码高亮容器 */
+    .code-wrap {
+      margin-top: 24px;
+    }
+    .code-title {
+      font-size: 16px;
+      margin-bottom: 8px;
+      color: #333;
+    }
+    .code-block {
+      background: #0f172a;
+      color: #a5f3fc;
+      padding: 16px;
+      border-radius: 8px;
+      max-height: 420px;
+      overflow-y: auto;
+      font-family: Consolas;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .code-line {
+      display: block;
+      padding: 2px 6px;
+      white-space: pre;
+    }
+    .code-line.active {
+      background: #234e70;
+      outline: 1px solid #38bdf8;
+    }
+  </style>
+</head>
+<body>
+<h1>Duplicate Zeros 三种算法可视化｜代码行同步高亮</h1>
+
+<div class="tab-wrap">
+  <div class="tab-buttons">
+    <button class="tab-btn active" data-tab="tab1">算法1：duplicateZeros 基础双指针</button>
+    <button class="tab-btn" data-tab="tab2">算法2：duplicateZerosV2 des=-1版本</button>
+    <button class="tab-btn" data-tab="tab3">算法3：duplicateZerosBest 最优偏移解法</button>
+  </div>
+
+  <!-- Tab1 基础版 -->
+  <div class="tab-content show" id="tab1">
+    <div class="control-panel">
+      <input type="text" id="arr1Input" value="[1, 0, 2, 3, 0, 4, 5, 0]" placeholder="输入数组，如 [1,0,2]">
+      <button class="operate reset" id="reset1" onclick="initTab1()">重置数组</button>
+      <button class="operate step" id="step1" onclick="stepTab1()">单步执行</button>
+      <button class="operate" id="auto1" onclick="runAllTab1()">自动完整执行</button>
+      <div class="speed-box">
+        <span>动画速度：</span>
+        <input type="range" id="speed1" min="100" max="1500" value="600">
+      </div>
+    </div>
+    <div class="array-box">
+      <div class="array-title">当前数组可视化</div>
+      <div class="array-container" id="arrBox1"></div>
+    </div>
+    <div class="log-box" id="log1">执行日志输出区域...</div>
+    <div class="code-wrap">
+      <div class="code-title">算法源码（当前执行行自动高亮）</div>
+      <div class="code-block" id="code1"></div>
+    </div>
+  </div>
+
+  <!-- Tab2 des=-1版 -->
+  <div class="tab-content" id="tab2">
+    <div class="control-panel">
+      <input type="text" id="arr2Input" value="[1, 0, 2, 3, 0, 4, 5]" placeholder="输入数组，如 [1,0,2]">
+      <button class="operate reset" id="reset2" onclick="initTab2()">重置数组</button>
+      <button class="operate step" id="step2" onclick="stepTab2()">单步执行</button>
+      <button class="operate" id="auto2" onclick="runAllTab2()">自动完整执行</button>
+      <div class="speed-box">
+        <span>动画速度：</span>
+        <input type="range" id="speed2" min="100" max="1500" value="600">
+      </div>
+    </div>
+    <div class="array-box">
+      <div class="array-title">当前数组可视化</div>
+      <div class="array-container" id="arrBox2"></div>
+    </div>
+    <div class="log-box" id="log2">执行日志输出区域...</div>
+    <div class="code-wrap">
+      <div class="code-title">算法源码（当前执行行自动高亮）</div>
+      <div class="code-block" id="code2"></div>
+    </div>
+  </div>
+
+  <!-- Tab3 最优偏移版 -->
+  <div class="tab-content" id="tab3">
+    <div class="control-panel">
+      <input type="text" id="arr3Input" value="[0, 0, 0, 0, 0, 0, 0]" placeholder="输入数组，如 [1,0,2]">
+      <button class="operate reset" id="reset3" onclick="initTab3()">重置数组</button>
+      <button class="operate step" id="step3" onclick="stepTab3()">单步执行</button>
+      <button class="operate" id="auto3" onclick="runAllTab3()">自动完整执行</button>
+      <div class="speed-box">
+        <span>动画速度：</span>
+        <input type="range" id="speed3" min="100" max="1500" value="600">
+      </div>
+    </div>
+    <div class="array-box">
+      <div class="array-title">当前数组可视化</div>
+      <div class="array-container" id="arrBox3"></div>
+    </div>
+    <div class="log-box" id="log3">执行日志输出区域...</div>
+    <div class="code-wrap">
+      <div class="code-title">算法源码（当前执行行自动高亮）</div>
+      <div class="code-block" id="code3"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===================== Tab切换逻辑 =====================
+const tabBtns = document.querySelectorAll(".tab-btn");
+const tabContents = document.querySelectorAll(".tab-content");
+tabBtns.forEach(btn => {
+  btn.onclick = () => {
+    const targetId = btn.dataset.tab;
+    tabBtns.forEach(b => b.classList.remove("active"));
+    tabContents.forEach(c => c.classList.remove("show"));
+    btn.classList.add("active");
+    document.getElementById(targetId).classList.add("show");
+  };
+});
+
+// ===================== 公共工具函数 =====================
+function parseArray(str) {
+  try {
+    return JSON.parse(str);
+  } catch (e) {
+    alert("数组格式错误，请输入合法JSON数组，例：[1,0,2]");
+    return [];
+  }
+}
+function renderArray(boxId, arr, curIdx = -1, desIdx = -1, copyZeroIdx = -1) {
+  const box = document.getElementById(boxId);
+  box.innerHTML = "";
+  arr.forEach((val, idx) => {
+    const item = document.createElement("div");
+    item.className = "array-item";
+    if (val === 0) item.classList.add("zero");
+    if (idx === curIdx) item.classList.add("mark-cur");
+    if (idx === desIdx) item.classList.add("mark-des");
+    if (idx === copyZeroIdx) item.classList.add("mark-zero-copy");
+    item.innerText = val;
+    const indexLab = document.createElement("span");
+    indexLab.className = "index-label";
+    indexLab.innerText = idx;
+    item.appendChild(indexLab);
+    box.appendChild(item);
+  });
+}
+function addLog(logId, text) {
+  const log = document.getElementById(logId);
+  log.innerHTML += text + "\n";
+  log.scrollTop = log.scrollHeight;
+}
+function clearLog(logId) {
+  document.getElementById(logId).innerHTML = "";
+}
+function sleep(ms) {
+  return new Promise(res => setTimeout(res, ms));
+}
+/**
+ * 代码行渲染 + 高亮指定行
+ * @param codeWrapId 代码容器id
+ * @param codeStr 完整代码字符串
+ * @param highlightLine 要高亮的行号（从0开始，-1取消高亮）
+ * @returns 拆分后的行数组
+ */
+function renderCodeLines(codeWrapId, codeStr, highlightLine = -1) {
+  const wrap = document.getElementById(codeWrapId);
+  const lines = codeStr.split("\n");
+  wrap.innerHTML = "";
+  lines.forEach((line, idx) => {
+    const span = document.createElement("span");
+    span.className = "code-line";
+    if (idx === highlightLine) span.classList.add("active");
+    span.textContent = line;
+    wrap.appendChild(span);
+  });
+  // 滚动到高亮行
+  if (highlightLine >= 0) {
+    const lineDom = wrap.children[highlightLine];
+    if(lineDom) lineDom.scrollIntoView({block:"center"});
+  }
+  return lines;
+}
+
+// ===================== 算法1 duplicateZeros 基础版 =====================
+const code1Text = `function duplicateZeros(arr) {
+  let des = 0; // 已消费的槽位数
+  let cur = 0; // 最后处理的原始索引
+  // 第一轮：找到截断位置
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i]) {
+      des += 1;
+    } else {
+      des += 2;
+    }
+    if (des >= arr.length) {
+      cur = i;
+      break;
+    }
+  }
+  // 边界：最后一个 0 只能放一份拷贝
+  if (des > arr.length) {
+    arr[arr.length - 1] = 0;
+    des = arr.length - 1;
+    cur--;
+  }
+  // 第二轮：从后往前填充
+  for (let i = cur; i >= 0; i--) {
+    if (arr[i]) {
+      arr[--des] = arr[i];
+    } else {
+      arr[--des] = 0;
+      arr[--des] = 0;
+    }
+  }
+  return arr;
+}`;
+let tab1State = {
+  arr: [], des: 0, cur: 0, i: 0, phase: 1, autoRun: false, done: false,
+  codeLines: [], highlightLine: -1
+};
+// 初始化代码行
+tab1State.codeLines = renderCodeLines("code1", code1Text, -1);
+
+function setTab1BtnDisabled(isDisabled) {
+  document.getElementById("step1").disabled = isDisabled;
+  document.getElementById("auto1").disabled = isDisabled;
+}
+function initTab1() {
+  const input = document.getElementById("arr1Input").value;
+  tab1State.arr = parseArray(input);
+  tab1State.des = 0;
+  tab1State.cur = 0;
+  tab1State.i = 0;
+  tab1State.phase = 1;
+  tab1State.autoRun = false;
+  tab1State.done = false;
+  tab1State.highlightLine = -1;
+  clearLog("log1");
+  renderArray("arrBox1", tab1State.arr);
+  renderCodeLines("code1", code1Text, -1);
+  setTab1BtnDisabled(false);
+  addLog("log1", "【初始化完成】数组：" + JSON.stringify(tab1State.arr));
+}
+async function stepTab1() {
+  const s = tab1State;
+  const speed = +document.getElementById("speed1").value;
+  const n = s.arr.length;
+  if (s.done) return;
+  setTab1BtnDisabled(true);
+
+  if (s.phase === 1) {
+    const i = s.i;
+    s.highlightLine = 4; renderCodeLines("code1", code1Text, s.highlightLine);
+    addLog("log1", `第一轮计数 i=${i}, arr[i]=${s.arr[i]}, des=${s.des}`);
+    await sleep(speed / 2);
+
+    s.highlightLine = s.arr[i] ? 5 : 7;
+    renderCodeLines("code1", code1Text, s.highlightLine);
+    if (s.arr[i]) s.des += 1;
+    else s.des += 2;
+    renderArray("arrBox1", s.arr, i, s.des - 1);
+    await sleep(speed);
+
+    s.highlightLine = 9; renderCodeLines("code1", code1Text, s.highlightLine);
+    if (s.des >= n) {
+      s.cur = i;
+      addLog("log1", `计数结束，cur=${i}, des=${s.des}，进入边界判断阶段`);
+      s.phase = 2;
+    } else {
+      s.i++;
+    }
+  } else if (s.phase === 2) {
+    s.highlightLine = 12; renderCodeLines("code1", code1Text, s.highlightLine);
+    addLog("log1", `边界判断 des=${s.des}, n=${n}`);
+    await sleep(speed / 2);
+
+    if (s.des > n) {
+      s.highlightLine = 13; renderCodeLines("code1", code1Text, s.highlightLine);
+      s.arr[n - 1] = 0;
+      renderArray("arrBox1", s.arr, -1, n - 1);
+      addLog("log1", `末尾仅存单个0，arr[${n-1}]=0`);
+      s.des = n - 1;
+      s.cur--;
+      await sleep(speed);
+    }
+    addLog("log1", `进入第二轮倒序填充，cur=${s.cur}, des=${s.des}`);
+    s.i = s.cur;
+    s.phase = 3;
+  } else if (s.phase === 3) {
+    const i = s.i;
+    s.highlightLine = 17; renderCodeLines("code1", code1Text, s.highlightLine);
+    addLog("log1", `倒序填充 i=${i}, arr[i]=${s.arr[i]}, des=${s.des}`);
+    await sleep(speed / 2);
+
+    if (s.arr[i]) {
+      s.highlightLine = 18; renderCodeLines("code1", code1Text, s.highlightLine);
+      s.des--;
+      s.arr[s.des] = s.arr[i];
+      renderArray("arrBox1", s.arr, i, s.des);
+    } else {
+      s.highlightLine = 20; renderCodeLines("code1", code1Text, s.highlightLine);
+      s.des--;
+      s.arr[s.des] = 0;
+      renderArray("arrBox1", s.arr, i, s.des, s.des + 1);
+      await sleep(speed);
+      s.highlightLine = 21; renderCodeLines("code1", code1Text, s.highlightLine);
+      s.des--;
+      s.arr[s.des] = 0;
+      renderArray("arrBox1", s.arr, i, s.des);
+    }
+    await sleep(speed);
+    s.i--;
+    if (s.i < 0) {
+      addLog("log1", "算法执行完毕！结果：" + JSON.stringify(s.arr));
+      s.done = true;
+      s.highlightLine = -1; renderCodeLines("code1", code1Text, -1);
+      setTab1BtnDisabled(true);
+    }
+  }
+  if (!s.done && !s.autoRun) setTab1BtnDisabled(false);
+}
+async function runAllTab1() {
+  if (tab1State.autoRun || tab1State.done) return;
+  tab1State.autoRun = true;
+  setTab1BtnDisabled(true);
+  while (tab1State.autoRun && !tab1State.done) {
+    await stepTab1();
+  }
+  tab1State.autoRun = false;
+}
+
+// ===================== 算法2 duplicateZerosV2 des=-1版 =====================
+const code2Text = `function duplicateZerosV2(arr) {
+  let des = -1; // 结果数组最后填充位置
+  let cur = -1; // 最后处理的原始索引
+  // 第一轮：找到截断点
+  for (let i = 0; i < arr.length; i++) {
+    cur++;
+    des += arr[i] ? 1 : 2;
+    if (des >= arr.length - 1) break;
+  }
+  // 边界：最后一个 0 溢出一份，手动填到末尾
+  if (des === arr.length) {
+    arr[arr.length - 1] = 0;
+    des = arr.length - 2;
+    cur--;
+  }
+  // 第二轮：从后往前写
+  for (let i = cur; i >= 0; i--) {
+    if (arr[i]) {
+      arr[des--] = arr[cur--];
+    } else {
+      arr[des--] = 0;
+      arr[des--] = 0;
+      cur--;
+    }
+  }
+  return arr;
+}`;
+let tab2State = {
+  arr: [], des: -1, cur: -1, i: 0, phase: 1, autoRun: false, done: false,
+  codeLines: [], highlightLine: -1
+};
+tab2State.codeLines = renderCodeLines("code2", code2Text, -1);
+
+function setTab2BtnDisabled(isDisabled) {
+  document.getElementById("step2").disabled = isDisabled;
+  document.getElementById("auto2").disabled = isDisabled;
+}
+function initTab2() {
+  const input = document.getElementById("arr2Input").value;
+  tab2State.arr = parseArray(input);
+  tab2State.des = -1;
+  tab2State.cur = -1;
+  tab2State.i = 0;
+  tab2State.phase = 1;
+  tab2State.autoRun = false;
+  tab2State.done = false;
+  tab2State.highlightLine = -1;
+  clearLog("log2");
+  renderArray("arrBox2", tab2State.arr);
+  renderCodeLines("code2", code2Text, -1);
+  setTab2BtnDisabled(false);
+  addLog("log2", "【初始化完成】数组：" + JSON.stringify(tab2State.arr));
+}
+async function stepTab2() {
+  const s = tab2State;
+  const speed = +document.getElementById("speed2").value;
+  const n = s.arr.length;
+  if (s.done) return;
+  setTab2BtnDisabled(true);
+
+  if (s.phase === 1) {
+    const i = s.i;
+    s.highlightLine = 5; renderCodeLines("code2", code2Text, s.highlightLine);
+    s.cur++;
+    addLog("log2", `第一轮计数 i=${i}, cur=${s.cur}, des=${s.des}`);
+    await sleep(speed / 2);
+
+    s.highlightLine = 6; renderCodeLines("code2", code2Text, s.highlightLine);
+    const add = s.arr[i] ? 1 : 2;
+    s.des += add;
+    renderArray("arrBox2", s.arr, i, s.des);
+    await sleep(speed);
+
+    s.highlightLine = 7; renderCodeLines("code2", code2Text, s.highlightLine);
+    if (s.des >= n - 1) {
+      addLog("log2", `计数截断，进入边界判断`);
+      s.phase = 2;
+    } else {
+      s.i++;
+    }
+  } else if (s.phase === 2) {
+    s.highlightLine = 10; renderCodeLines("code2", code2Text, s.highlightLine);
+    addLog("log2", `边界判断 des=${s.des}, n=${n}`);
+    await sleep(speed / 2);
+
+    if (s.des === n) {
+      s.highlightLine = 11; renderCodeLines("code2", code2Text, s.highlightLine);
+      s.arr[n - 1] = 0;
+      renderArray("arrBox2", s.arr, -1, n - 1);
+      addLog("log2", `末尾填充单个0 arr[${n-1}]=0`);
+      s.des = n - 2;
+      s.cur--;
+      await sleep(speed);
+    }
+    addLog("log2", `进入倒序填充 cur=${s.cur}, des=${s.des}`);
+    s.i = s.cur;
+    s.phase = 3;
+  } else if (s.phase === 3) {
+    const i = s.i;
+    s.highlightLine = 15; renderCodeLines("code2", code2Text, s.highlightLine);
+    addLog("log2", `倒序 i=${i}, arr[i]=${s.arr[i]}, des=${s.des}`);
+    await sleep(speed / 2);
+
+    if (s.arr[i]) {
+      s.highlightLine = 16; renderCodeLines("code2", code2Text, s.highlightLine);
+      s.arr[s.des] = s.arr[i];
+      renderArray("arrBox2", s.arr, i, s.des);
+      s.des--;
+      s.cur--;
+    } else {
+      s.highlightLine = 18; renderCodeLines("code2", code2Text, s.highlightLine);
+      s.arr[s.des] = 0;
+      renderArray("arrBox2", s.arr, i, s.des, s.des + 1);
+      await sleep(speed);
+      s.highlightLine = 19; renderCodeLines("code2", code2Text, s.highlightLine);
+      s.des--;
+      s.arr[s.des] = 0;
+      renderArray("arrBox2", s.arr, i, s.des);
+      s.des--;
+      s.cur--;
+    }
+    await sleep(speed);
+    s.i--;
+    if (s.i < 0) {
+      addLog("log2", "算法执行完毕！结果：" + JSON.stringify(s.arr));
+      s.done = true;
+      s.highlightLine = -1; renderCodeLines("code2", code2Text, -1);
+      setTab2BtnDisabled(true);
+    }
+  }
+  if (!s.done && !s.autoRun) setTab2BtnDisabled(false);
+}
+async function runAllTab2() {
+  if (tab2State.autoRun || tab2State.done) return;
+  tab2State.autoRun = true;
+  setTab2BtnDisabled(true);
+  while (tab2State.autoRun && !tab2State.done) {
+    await stepTab2();
+  }
+  tab2State.autoRun = false;
+}
+
+// ===================== 算法3 duplicateZerosBest 最优偏移 =====================
+const code3Text = `function duplicateZerosBest(arr) {
+  const n = arr.length;
+  // 统计所有 0 的个数
+  let zeros = 0;
+  for (let i = 0; i < n; i++) {
+    if (arr[i] === 0) zeros++;
+  }
+  // 从右往左写
+  for (let i = n - 1; i >= 0; i--) {
+    if (arr[i] === 0) {
+      if (i + zeros < n) arr[i + zeros] = 0; // 复制的 0（靠右）
+      zeros--;
+      if (i + zeros < n) arr[i + zeros] = 0; // 原始的 0（靠左）
+    } else {
+      if (i + zeros < n) arr[i + zeros] = arr[i];
+    }
+  }
+  return arr;
+}`;
+let tab3State = {
+  arr: [], zeros: 0, i: 0, phase: 1, autoRun: false, done: false,
+  codeLines: [], highlightLine: -1
+};
+tab3State.codeLines = renderCodeLines("code3", code3Text, -1);
+
+function setTab3BtnDisabled(isDisabled) {
+  document.getElementById("step3").disabled = isDisabled;
+  document.getElementById("auto3").disabled = isDisabled;
+}
+function initTab3() {
+  const input = document.getElementById("arr3Input").value;
+  tab3State.arr = parseArray(input);
+  tab3State.zeros = 0;
+  tab3State.i = 0;
+  tab3State.phase = 1;
+  tab3State.autoRun = false;
+  tab3State.done = false;
+  tab3State.highlightLine = -1;
+  clearLog("log3");
+  renderArray("arrBox3", tab3State.arr);
+  renderCodeLines("code3", code3Text, -1);
+  setTab3BtnDisabled(false);
+  addLog("log3", "【初始化完成】数组：" + JSON.stringify(tab3State.arr));
+}
+async function stepTab3() {
+  const s = tab3State;
+  const speed = +document.getElementById("speed3").value;
+  const n = s.arr.length;
+  if (s.done) return;
+  setTab3BtnDisabled(true);
+
+  if (s.phase === 1) {
+    const i = s.i;
+    s.highlightLine = 4; renderCodeLines("code3", code3Text, s.highlightLine);
+    addLog("log3", `统计0 i=${i}, arr[i]=${s.arr[i]}, zeros=${s.zeros}`);
+    await sleep(speed / 2);
+
+    s.highlightLine = 5; renderCodeLines("code3", code3Text, s.highlightLine);
+    if (s.arr[i] === 0) s.zeros++;
+    renderArray("arrBox3", s.arr, i);
+    await sleep(speed);
+    s.i++;
+    if (s.i >= n) {
+      addLog("log3", `统计完成，总零数 zeros=${s.zeros}，进入倒序填充`);
+      s.i = n - 1;
+      s.phase = 2;
+    }
+  } else if (s.phase === 2) {
+    const i = s.i;
+    s.highlightLine = 9; renderCodeLines("code3", code3Text, s.highlightLine);
+    addLog("log3", `倒序填充 i=${i}, arr[i]=${s.arr[i]}, zeros=${s.zeros}`);
+    await sleep(speed / 2);
+
+    const offset = i + s.zeros;
+    if (s.arr[i] === 0) {
+      s.highlightLine = 10; renderCodeLines("code3", code3Text, s.highlightLine);
+      if (offset < n) {
+        s.arr[offset] = 0;
+        renderArray("arrBox3", s.arr, i, offset);
+      }
+      await sleep(speed);
+
+      s.highlightLine = 11; renderCodeLines("code3", code3Text, s.highlightLine);
+      s.zeros--;
+      const offset2 = i + s.zeros;
+      s.highlightLine = 12; renderCodeLines("code3", code3Text, s.highlightLine);
+      if (offset2 < n) {
+        s.arr[offset2] = 0;
+        renderArray("arrBox3", s.arr, i, offset2, offset);
+      }
+    } else {
+      s.highlightLine = 14; renderCodeLines("code3", code3Text, s.highlightLine);
+      if (offset < n) {
+        s.arr[offset] = s.arr[i];
+        renderArray("arrBox3", s.arr, i, offset);
+      }
+    }
+    await sleep(speed);
+    s.i--;
+    if (s.i < 0) {
+      addLog("log3", "算法执行完毕！结果：" + JSON.stringify(s.arr));
+      s.done = true;
+      s.highlightLine = -1; renderCodeLines("code3", code3Text, -1);
+      setTab3BtnDisabled(true);
+    }
+  }
+  if (!s.done && !s.autoRun) setTab3BtnDisabled(false);
+}
+async function runAllTab3() {
+  if (tab3State.autoRun || tab3State.done) return;
+  tab3State.autoRun = true;
+  setTab3BtnDisabled(true);
+  while (tab3State.autoRun && !tab3State.done) {
+    await stepTab3();
+  }
+  tab3State.autoRun = false;
+}
+
+// 页面加载初始化三个Tab
+window.onload = () => {
+  initTab1();
+  initTab2();
+  initTab3();
+};
+</script>
+</body>
+</html>

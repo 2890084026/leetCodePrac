@@ -3,20 +3,13 @@ const arr1 = [1, 0, 2, 3, 0, 4, 5];
 const arr3 = [0, 0, 0, 0, 0, 0, 0];
 
 function duplicateZeros(arr) {
-  let des = 0;  // 已消费的槽位数
-  let cur = 0;  // 最后处理的原始索引
+  let des = 0; // 已消费的槽位数
+  let cur = 0; // 游标：既做遍历下标，也记录截断位置
 
-  // 第一轮：找到截断位置
-  for (let i = 0; i < arr.length; i++) {
-    if (arr[i]) {
-      des += 1;
-    } else {
-      des += 2;
-    }
-    if (des >= arr.length) {
-      cur = i;
-      break;
-    }
+  // 第一轮：cur 正向扫描，定位截断点
+  for (cur = 0; cur < arr.length; cur++) {
+    des += arr[cur] ? 1 : 2;
+    if (des >= arr.length) break;
   }
 
   // 边界：最后一个 0 只能放一份拷贝
@@ -26,10 +19,10 @@ function duplicateZeros(arr) {
     cur--;
   }
 
-  // 第二轮：从后往前填充
-  for (let i = cur; i >= 0; i--) {
-    if (arr[i]) {
-      arr[--des] = arr[i];
+  // 第二轮：cur 倒序填充，cur 自身就是读取下标
+  for (; cur >= 0; cur--) {
+    if (arr[cur]) {
+      arr[--des] = arr[cur];
     } else {
       arr[--des] = 0;
       arr[--des] = 0;
@@ -38,13 +31,40 @@ function duplicateZeros(arr) {
 
   return arr;
 }
-
+/*
+function duplicateZeros(arr: number[]): void {
+    let cur = 0, des = 0
+    for (; cur < arr.length; cur++) {
+        if (arr[cur]) {
+            des += 2
+        } else {
+            des++
+        }
+        if (des >= arr.length) {
+            break
+        }
+    }
+    if (des > arr.length) {
+        arr[arr.length - 1] = 0
+        des = arr.length - 1
+        cur--
+    }
+    for (; cur >= 0; cur--) {
+        if (arr[cur]) {
+            arr[--des] = arr[cur]
+        } else {
+            arr[--des] = 0
+            arr[--des] = 0
+        }
+    }
+};
+*/
 // ============================================
 // des = -1 版本：des 表示"结果数组最后填到的位置"
 // ============================================
 function duplicateZerosV2(arr) {
-  let des = -1;  // 结果数组最后填充位置
-  let cur = -1;  // 最后处理的原始索引
+  let des = -1; // 结果数组最后填充位置
+  let cur = -1; // 最后处理的原始索引
 
   // 第一轮：找到截断点
   for (let i = 0; i < arr.length; i++) {
@@ -129,19 +149,19 @@ console.log(duplicateZerosBest(arr3));
 
 // const arr = [0, 1, 0, 3, 12]
 // 题目要求：将所有0移动到数组末尾l
-function swap(arr, i, j) {
-  arr[j] = arr.splice(i, 1, arr[j])[0];
-}
+// function swap(arr, i, j) {
+//   arr[j] = arr.splice(i, 1, arr[j])[0];
+// }
 
-function move(arr) {
-  let des = -1;
-  for (let i = 0; i < arr.length; i++) {
-    if (arr[i] != 0) {
-      des++;
-      swap(arr, des, i);
-    }
-  }
-  return arr;
-}
-move(arr);
-console.log(arr, "ar11r");
+// function move(arr) {
+//   let des = -1;
+//   for (let i = 0; i < arr.length; i++) {
+//     if (arr[i] != 0) {
+//       des++;
+//       swap(arr, des, i);
+//     }
+//   }
+//   return arr;
+// }
+// move(arr);
+// console.log(arr, "ar11r");

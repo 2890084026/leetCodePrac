@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Duplicate Zeros - 算法可视化</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #f0f2f5;
+    color: #333;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .container { max-width: 960px; margin: 0 auto; }
+
+  h1 {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 6px;
+    color: #1a1a2e;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 20px;
+  }
+
+  /* ---- 输入区 ---- */
+  .input-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .input-row label { font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .input-row input {
+    flex: 1; min-width: 220px;
+    padding: 8px 12px;
+    border: 1px solid #d0d5dd;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  }
+  .input-row button {
+    padding: 8px 18px;
+    border: none; border-radius: 6px;
+    background: #4A90D9; color: #fff;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: background .15s;
+  }
+  .input-row button:hover { background: #357ABD; }
+
+  /* ---- 图例 ---- */
+  .legend {
+    display: flex; gap: 18px; justify-content: center;
+    margin-bottom: 14px; font-size: 12px;
+  }
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .legend .dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+  .dot.nz { background: #4A90D9; }
+  .dot.z  { background: #E74C3C; }
+  .dot.r  { border: 2px solid #F39C12; background: transparent; width: 10px; height: 10px; }
+  .dot.w  { border: 2px solid #2ECC71; background: transparent; width: 10px; height: 10px; }
+
+  /* ---- 数组可视化 ---- */
+  .array-section {
+    background: #fff; border-radius: 10px; padding: 20px 16px 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    margin-bottom: 14px;
+  }
+  .array-section h3 { font-size: 13px; color: #888; margin-bottom: 6px; text-align: center; }
+
+  .array-row {
+    display: flex; gap: 6px; justify-content: center;
+    flex-wrap: wrap; margin-bottom: 2px;
+  }
+  .cell-wrapper {
+    display: flex; flex-direction: column; align-items: center;
+    transition: transform .2s;
+  }
+  .cell {
+    width: 52px; height: 52px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 700; color: #fff;
+    border: 3px solid transparent;
+    transition: border-color .2s, transform .2s, box-shadow .2s;
+    position: relative;
+  }
+  .cell.nz { background: #4A90D9; }
+  .cell.z  { background: #E74C3C; }
+  .cell.read  { border-color: #F39C12; box-shadow: 0 0 10px rgba(243,156,18,.45); transform: translateY(-4px); }
+  .cell.write { border-color: #2ECC71; box-shadow: 0 0 10px rgba(46,204,113,.45); transform: translateY(-4px); }
+  .cell.read.write { border-color: #9B59B6; box-shadow: 0 0 12px rgba(155,89,182,.5); }
+  .idx-label {
+    font-size: 11px; color: #999; margin-top: 4px;
+    font-family: "SF Mono", "Fira Code", monospace;
+  }
+  .pointer-label {
+    font-size: 10px; font-weight: 700; margin-top: 1px;
+    min-height: 14px; text-align: center;
+  }
+  .pointer-label.read  { color: #F39C12; }
+  .pointer-label.write { color: #2ECC71; }
+
+  .annotation-bar {
+    text-align: center; margin-top: 10px;
+    font-size: 14px; font-weight: 600; color: #555;
+    min-height: 22px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: #f8f9fa;
+  }
+
+  /* ---- 变量面板 ---- */
+  .vars-panel {
+    background: #fff; border-radius: 10px; padding: 14px 18px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    margin-bottom: 14px;
+    display: flex; gap: 20px; align-items: center;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .var-card {
+    background: #f8f9fa; border-radius: 8px;
+    padding: 8px 16px; text-align: center; min-width: 70px;
+    border: 2px solid transparent; transition: border-color .25s;
+  }
+  .var-card.changed { border-color: #F39C12; }
+  .var-card .var-name  { font-size: 11px; color: #999; font-family: "SF Mono", monospace; }
+  .var-card .var-value { font-size: 22px; font-weight: 700; color: #1a1a2e; margin-top: 2px; }
+  .phase-tag {
+    display: inline-block; padding: 4px 14px; border-radius: 20px;
+    font-size: 12px; font-weight: 700; color: #fff;
+  }
+  .phase-tag.phase1 { background: #4A90D9; }
+  .phase-tag.phase2 { background: #E74C3C; }
+  .phase-tag.edge   { background: #F39C12; }
+  .phase-tag.done   { background: #2ECC71; }
+
+  /* ---- 控制栏 ---- */
+  .controls {
+    display: flex; gap: 10px; align-items: center;
+    justify-content: center; flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .controls button {
+    padding: 10px 20px; border: none; border-radius: 8px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: background .15s, transform .1s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .controls button:active { transform: scale(.96); }
+  .btn-play  { background: #2ECC71; color: #fff; }
+  .btn-play:hover  { background: #27AE60; }
+  .btn-pause { background: #F39C12; color: #fff; }
+  .btn-pause:hover { background: #E67E22; }
+  .btn-step  { background: #4A90D9; color: #fff; }
+  .btn-step:hover  { background: #357ABD; }
+  .btn-reset { background: #95A5A6; color: #fff; }
+  .btn-reset:hover { background: #7F8C8D; }
+
+  .speed-group {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: #888;
+  }
+  .speed-group input[type=range] { width: 100px; }
+
+  .step-counter {
+    font-size: 13px; font-weight: 600; color: #666;
+    min-width: 90px; text-align: center;
+  }
+
+  /* ---- 源码面板 ---- */
+  .code-section {
+    background: #fff; border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    overflow: hidden;
+  }
+  .code-section h3 {
+    font-size: 13px; color: #888; padding: 12px 18px 8px;
+  }
+  .code-panel {
+    background: #1E1E1E; color: #D4D4D4;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", "Consolas", monospace;
+    font-size: 13px; line-height: 1.7;
+    padding: 12px 0; overflow-x: auto;
+    max-height: 500px; overflow-y: auto;
+  }
+  .code-line {
+    display: flex; padding: 0 18px;
+    transition: background .2s;
+  }
+  .code-line.active {
+    background: rgba(255, 213, 0, 0.18);
+    border-left: 3px solid #FFD500;
+    padding-left: 15px;
+  }
+  .code-line .ln {
+    color: #858585; min-width: 28px; text-align: right;
+    margin-right: 16px; user-select: none;
+  }
+  .code-line .txt { white-space: pre; }
+  .code-line .kw { color: #569CD6; }
+  .code-line .fn { color: #DCDCAA; }
+  .code-line .cm { color: #6A9955; }
+  .code-line .str { color: #CE9178; }
+  .code-line .num { color: #B5CEA8; }
+  .code-line .op { color: #D4D4D4; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Duplicate Zeros 算法可视化</h1>
+  <p class="subtitle">原地复写零 — 两轮扫描：正向定位截断点 + 反向填充</p>
+
+  <!-- 输入区 -->
+  <div class="input-row">
+    <label for="arrInput">输入数组:</label>
+    <input id="arrInput" type="text" value="1,0,2,3,0,4,5,0" placeholder="逗号分隔，如 1,0,2,3,0,4,5,0">
+    <button onclick="resetWithInput()">应用</button>
+  </div>
+
+  <!-- 图例 -->
+  <div class="legend">
+    <span><span class="dot nz"></span> 非零元素</span>
+    <span><span class="dot z"></span> 零元素</span>
+    <span><span class="dot r"></span> 读取位置 (i)</span>
+    <span><span class="dot w"></span> 写入位置 (des)</span>
+  </div>
+
+  <!-- 数组可视化 -->
+  <div class="array-section">
+    <h3 id="arrayLabel">数组状态</h3>
+    <div class="array-row" id="arrayRow"></div>
+    <div class="annotation-bar" id="annotation"></div>
+  </div>
+
+  <!-- 变量面板 -->
+  <div class="vars-panel" id="varsPanel">
+    <span class="phase-tag phase1" id="phaseTag">第一轮扫描</span>
+    <div class="var-card" id="varDes"><div class="var-name">des</div><div class="var-value">0</div></div>
+    <div class="var-card" id="varCur"><div class="var-name">cur</div><div class="var-value">0</div></div>
+    <div class="var-card" id="varI"><div class="var-name">i</div><div class="var-value">—</div></div>
+  </div>
+
+  <!-- 控制栏 -->
+  <div class="controls">
+    <button class="btn-play" id="btnPlay" onclick="togglePlay()">
+      <span id="btnIcon">▶</span> <span id="btnLabel">自动播放</span>
+    </button>
+    <button class="btn-step" onclick="stepForward()">→ 下一步</button>
+    <button class="btn-reset" onclick="resetAnimation()">↺ 重置</button>
+    <div class="speed-group">
+      速度 <input type="range" id="speedSlider" min="100" max="2000" value="700" step="50" oninput="updateSpeed()">
+      <span id="speedLabel">700ms</span>
+    </div>
+    <span class="step-counter" id="stepCounter">步骤 0 / 0</span>
+  </div>
+
+  <!-- 源码面板 -->
+  <div class="code-section">
+    <h3>算法源码（高亮行 = 当前执行位置）</h3>
+    <div class="code-panel" id="codePanel"></div>
+  </div>
+</div>
+
+<script>
+// ===================== 源码定义 =====================
+const CODE_LINES = [
+  { ln: 5,  txt: 'function duplicateZeros(arr) {' },
+  { ln: 6,  txt: '  let des = 0; // 已消费的槽位数' },
+  { ln: 7,  txt: '  let cur = 0; // 最后处理的原始索引' },
+  { ln: 8,  txt: '' },
+  { ln: 9,  txt: '  // 第一轮：找到截断位置' },
+  { ln: 10, txt: '  for (let i = 0; i < arr.length; i++) {' },
+  { ln: 11, txt: '    if (arr[i]) {' },
+  { ln: 12, txt: '      des += 1;' },
+  { ln: 13, txt: '    } else {' },
+  { ln: 14, txt: '      des += 2;' },
+  { ln: 15, txt: '    }' },
+  { ln: 16, txt: '    if (des >= arr.length) {' },
+  { ln: 17, txt: '      cur = i;' },
+  { ln: 18, txt: '      break;' },
+  { ln: 19, txt: '    }' },
+  { ln: 20, txt: '  }' },
+  { ln: 21, txt: '' },
+  { ln: 22, txt: '  // 边界：最后一个 0 只能放一份拷贝' },
+  { ln: 23, txt: '  if (des > arr.length) {' },
+  { ln: 24, txt: '    arr[arr.length - 1] = 0;' },
+  { ln: 25, txt: '    des = arr.length - 1;' },
+  { ln: 26, txt: '    cur--;' },
+  { ln: 27, txt: '  }' },
+  { ln: 28, txt: '' },
+  { ln: 29, txt: '  // 第二轮：从后往前填充' },
+  { ln: 30, txt: '  for (let i = cur; i >= 0; i--) {' },
+  { ln: 31, txt: '    if (arr[i]) {' },
+  { ln: 32, txt: '      arr[--des] = arr[i];' },
+  { ln: 33, txt: '    } else {' },
+  { ln: 34, txt: '      arr[--des] = 0;' },
+  { ln: 35, txt: '      arr[--des] = 0;' },
+  { ln: 36, txt: '    }' },
+  { ln: 37, txt: '  }' },
+  { ln: 38, txt: '' },
+  { ln: 39, txt: '  return arr;' },
+  { ln: 40, txt: '}' },
+];
+
+// ===================== 步骤生成 =====================
+function generateSteps(initialArr) {
+  const steps = [];
+  const arr = [...initialArr];
+  const n = arr.length;
+
+  function snap(line, vars, readIdx, writeIdx, annotation, phase) {
+    steps.push({
+      arr: [...arr],
+      line,
+      vars: { ...vars },
+      readIdx: readIdx ?? -1,
+      writeIdx: writeIdx ?? -1,
+      annotation: annotation || '',
+      phase: phase || '',
+    });
+  }
+
+  // ---- 步骤 0：初始状态 ----
+  snap(5, { des: '?', cur: '?', i: '?' }, -1, -1, '函数调用，准备开始', 'init');
+
+  // ---- 初始化 ----
+  snap(6, { des: 0, cur: '?', i: '?' }, -1, -1, '初始化 des = 0（已消费槽位数）', 'phase1');
+  let des = 0;
+  snap(7, { des: 0, cur: 0, i: '?' }, -1, -1, '初始化 cur = 0（截断位置索引）', 'phase1');
+  let cur = 0;
+
+  // ---- 第一轮：找到截断位置 ----
+  snap(10, { des, cur, i: 0 }, 0, -1, '第一轮扫描开始，i = 0', 'phase1');
+
+  for (let i = 0; i < n; i++) {
+    snap(11, { des, cur, i }, i, -1,
+      `检查 arr[${i}] = ${arr[i]}，是${arr[i] ? '非零' : '零'}`, 'phase1');
+
+    if (arr[i]) {
+      des += 1;
+      snap(12, { des, cur, i }, i, -1,
+        `非零元素，des += 1 → des = ${des}`, 'phase1');
+    } else {
+      des += 2;
+      snap(14, { des, cur, i }, i, -1,
+        `零元素，占用两个槽位，des += 2 → des = ${des}`, 'phase1');
+    }
+
+    snap(16, { des, cur, i }, i, -1,
+      `判断 des(${des}) >= n(${n}) ? ${des >= n ? '是，截断！' : '否，继续'}`, 'phase1');
+
+    if (des >= n) {
+      cur = i;
+      snap(17, { des, cur, i }, i, -1,
+        `截断位置确定：cur = ${cur}（arr[${cur}] = ${arr[cur]}）`, 'phase1');
+      snap(18, { des, cur, i }, i, -1, 'break 退出第一轮循环', 'phase1');
+      break;
+    }
+  }
+
+  // ---- 边界处理 ----
+  snap(23, { des, cur, i: '—' }, -1, n - 1,
+    `检查边界：des(${des}) > n(${n}) ? ${des > n ? '是，需要处理溢出' : '否，无需处理'}`, 'edge');
+
+  if (des > n) {
+    arr[n - 1] = 0;
+    snap(24, { des, cur, i: '—' }, -1, n - 1,
+      `边界情况：最后一个 0 溢出，arr[${n - 1}] 单独置 0`, 'edge');
+
+    des = n - 1;
+    cur--;
+    snap(25, { des, cur, i: '—' }, -1, n - 1,
+      `调整：des = ${des}, cur = ${cur}（跳过那个溢出的 0）`, 'edge');
+  }
+
+  // ---- 第二轮：从后往前填充 ----
+  snap(30, { des, cur, i: cur }, cur, des,
+    `第二轮填充开始，从 cur = ${cur} 位置倒序处理`, 'phase2');
+
+  for (let i = cur; i >= 0; i--) {
+    snap(31, { des, cur, i }, i, des,
+      `读取 arr[${i}] = ${arr[i]}，${arr[i] ? '非零' : '零'}`, 'phase2');
+
+    if (arr[i]) {
+      arr[--des] = arr[i];
+      snap(32, { des, cur, i }, i, des,
+        `非零：arr[${des}] = arr[${i}] = ${arr[des]}`, 'phase2');
+    } else {
+      arr[--des] = 0;
+      snap(34, { des, cur, i }, i, des,
+        `写入零的第一份拷贝到 arr[${des}]`, 'phase2');
+
+      arr[--des] = 0;
+      snap(35, { des, cur, i }, i, des,
+        `写入零的第二份拷贝到 arr[${des}]`, 'phase2');
+    }
+  }
+
+  // ---- 完成 ----
+  snap(39, { des, cur, i: '—' }, -1, -1,
+    '算法完成，返回结果数组', 'done');
+
+  return steps;
+}
+
+// ===================== 动画控制器 =====================
+let steps = [];
+let currentStep = 0;
+let timer = null;
+let playing = false;
+let speed = 700;
+
+function updateSpeed() {
+  speed = parseInt(document.getElementById('speedSlider').value);
+  document.getElementById('speedLabel').textContent = speed + 'ms';
+  if (playing) {
+    clearInterval(timer);
+    timer = setInterval(autoStep, speed);
+  }
+}
+
+function togglePlay() {
+  if (playing) {
+    pause();
+  } else {
+    play();
+  }
+}
+
+function play() {
+  if (currentStep >= steps.length - 1) {
+    resetAnimation();
+  }
+  playing = true;
+  document.getElementById('btnIcon').textContent = '⏸';
+  document.getElementById('btnLabel').textContent = '暂停';
+  document.getElementById('btnPlay').className = 'btn-pause';
+  timer = setInterval(autoStep, speed);
+}
+
+function pause() {
+  playing = false;
+  clearInterval(timer);
+  timer = null;
+  document.getElementById('btnIcon').textContent = '▶';
+  document.getElementById('btnLabel').textContent = '自动播放';
+  document.getElementById('btnPlay').className = 'btn-play';
+}
+
+function autoStep() {
+  if (currentStep < steps.length - 1) {
+    currentStep++;
+    renderStep(currentStep);
+  } else {
+    pause();
+  }
+}
+
+function stepForward() {
+  pause();
+  if (currentStep < steps.length - 1) {
+    currentStep++;
+    renderStep(currentStep);
+  }
+}
+
+function resetAnimation() {
+  pause();
+  currentStep = 0;
+  renderStep(0);
+}
+
+function resetWithInput() {
+  const raw = document.getElementById('arrInput').value.trim();
+  if (!raw) return;
+  let arr;
+  try {
+    arr = raw.split(',').map(s => {
+      const n = Number(s.trim());
+      if (isNaN(n)) throw new Error('无效数字: ' + s);
+      return n;
+    });
+  } catch (e) {
+    alert('输入格式错误，请使用逗号分隔的数字，如: 1,0,2,3,0,4,5,0');
+    return;
+  }
+  if (arr.length === 0 || arr.length > 15) {
+    alert('数组长度需在 1~15 之间');
+    return;
+  }
+  steps = generateSteps(arr);
+  resetAnimation();
+}
+
+// ===================== 渲染 =====================
+function renderStep(idx) {
+  const step = steps[idx];
+  const n = step.arr.length;
+
+  // ---- 更新步骤计数器 ----
+  document.getElementById('stepCounter').textContent =
+    `步骤 ${idx} / ${steps.length - 1}`;
+
+  // ---- 更新数组标签 ----
+  const label = document.getElementById('arrayLabel');
+  if (idx === 0) {
+    label.textContent = '原始数组';
+  } else if (step.phase === 'done') {
+    label.textContent = '最终结果';
+  } else {
+    label.textContent = '当前数组（原地修改中）';
+  }
+
+  // ---- 渲染数组 ----
+  const row = document.getElementById('arrayRow');
+  let html = '';
+  for (let j = 0; j < n; j++) {
+    const val = step.arr[j];
+    const isZero = val === 0;
+    const isRead  = j === step.readIdx;
+    const isWrite = j === step.writeIdx;
+
+    let cellClass = isZero ? 'z' : 'nz';
+    let ptrLabel = '';
+    let ptrClass = '';
+    if (isRead && isWrite) {
+      cellClass += ' read write';
+      ptrLabel = 'R/W';
+      ptrClass = 'read';
+    } else if (isRead) {
+      cellClass += ' read';
+      ptrLabel = 'R';
+      ptrClass = 'read';
+    } else if (isWrite) {
+      cellClass += ' write';
+      ptrLabel = 'W';
+      ptrClass = 'write';
+    }
+
+    html += '<div class="cell-wrapper">';
+    html += `<div class="cell ${cellClass}">${val}</div>`;
+    html += `<div class="idx-label">[${j}]</div>`;
+    html += `<div class="pointer-label ${ptrClass}">${ptrLabel}</div>`;
+    html += '</div>';
+  }
+  row.innerHTML = html;
+
+  // ---- 更新注释 ----
+  document.getElementById('annotation').textContent = step.annotation;
+
+  // ---- 更新变量面板 ----
+  const phaseTag = document.getElementById('phaseTag');
+  phaseTag.className = 'phase-tag';
+  switch (step.phase) {
+    case 'init':   phaseTag.textContent = '初始化'; phaseTag.classList.add('phase1'); break;
+    case 'phase1': phaseTag.textContent = '第一轮扫描'; phaseTag.classList.add('phase1'); break;
+    case 'edge':   phaseTag.textContent = '边界处理'; phaseTag.classList.add('edge'); break;
+    case 'phase2': phaseTag.textContent = '第二轮填充'; phaseTag.classList.add('phase2'); break;
+    case 'done':   phaseTag.textContent = '完成'; phaseTag.classList.add('done'); break;
+  }
+
+  updateVarCard('varDes', 'des', step.vars.des);
+  updateVarCard('varCur', 'cur', step.vars.cur);
+  updateVarCard('varI',   'i',   step.vars.i);
+
+  // ---- 更新源码高亮（DOM 构建，杜绝 innerHTML 注入问题）----
+  const codePanel = document.getElementById('codePanel');
+  codePanel.innerHTML = '';
+  for (const cl of CODE_LINES) {
+    const lineDiv = document.createElement('div');
+    lineDiv.className = 'code-line' + (cl.ln === step.line ? ' active' : '');
+
+    const lnSpan = document.createElement('span');
+    lnSpan.className = 'ln';
+    lnSpan.textContent = cl.ln;
+    lineDiv.appendChild(lnSpan);
+
+    const txtSpan = document.createElement('span');
+    txtSpan.className = 'txt';
+    buildHighlightedContent(txtSpan, cl.txt);
+    lineDiv.appendChild(txtSpan);
+
+    codePanel.appendChild(lineDiv);
+  }
+
+  // 自动滚动源码面板到高亮行
+  const activeLine = codePanel.querySelector('.code-line.active');
+  if (activeLine) {
+    activeLine.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+}
+
+// ---- 变量卡片更新 ----
+let prevVars = {};
+function updateVarCard(id, name, val) {
+  const card = document.getElementById(id);
+  const displayVal = val === '?' ? '?' : (val === '—' ? '—' : val);
+  card.querySelector('.var-value').textContent = displayVal;
+  // 高亮变化的变量
+  if (prevVars[name] !== undefined && prevVars[name] !== val) {
+    card.classList.add('changed');
+    setTimeout(() => card.classList.remove('changed'), 400);
+  }
+  prevVars[name] = val;
+}
+
+// ---- 基于 DOM 的语法高亮（textContent 天然防注入）----
+function buildHighlightedContent(parent, text) {
+  // 五种 token 按优先级排列：注释 > 关键字 > 函数名 > 数字 > 字符串
+  var TOKEN_RE = /(\/\/.*)|(\b(?:function|let|const|var|if|else|for|break|return)\b)|(\b[a-zA-Z_]\w*(?=\s*\())|(\b\d+\b)|('.*?'|".*?")/g;
+
+  var lastIndex = 0;
+  var match;
+
+  while ((match = TOKEN_RE.exec(text)) !== null) {
+    // 输出匹配前的纯文本
+    if (match.index > lastIndex) {
+      parent.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+    }
+
+    var span = document.createElement('span');
+    if (match[1])       span.className = 'cm';  // 注释
+    else if (match[2])  span.className = 'kw';  // 关键字
+    else if (match[3])  span.className = 'fn';  // 函数名
+    else if (match[4])  span.className = 'num'; // 数字
+    else if (match[5])  span.className = 'str'; // 字符串
+    span.textContent = match[0];
+    parent.appendChild(span);
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // 输出剩余纯文本
+  if (lastIndex < text.length) {
+    parent.appendChild(document.createTextNode(text.slice(lastIndex)));
+  }
+
+  // 空行也保留一个文本节点以维持行高
+  if (parent.childNodes.length === 0) {
+    parent.appendChild(document.createTextNode(' '));
+  }
+}
+
+// ===================== 初始化 =====================
+function init() {
+  const defaultArr = [1, 0, 2, 3, 0, 4, 5, 0];
+  steps = generateSteps(defaultArr);
+  renderStep(0);
+}
+
+init();
+</script>
+</body>
+</html>

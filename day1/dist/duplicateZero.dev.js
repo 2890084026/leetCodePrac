@@ -7,20 +7,12 @@ var arr3 = [0, 0, 0, 0, 0, 0, 0];
 function duplicateZeros(arr) {
   var des = 0; // 已消费的槽位数
 
-  var cur = 0; // 最后处理的原始索引
-  // 第一轮：找到截断位置
+  var cur = 0; // 游标：既做遍历下标，也记录截断位置
+  // 第一轮：cur 正向扫描，定位截断点
 
-  for (var i = 0; i < arr.length; i++) {
-    if (arr[i]) {
-      des += 1;
-    } else {
-      des += 2;
-    }
-
-    if (des >= arr.length) {
-      cur = i;
-      break;
-    }
+  for (cur = 0; cur < arr.length; cur++) {
+    des += arr[cur] ? 1 : 2;
+    if (des >= arr.length) break;
   } // 边界：最后一个 0 只能放一份拷贝
 
 
@@ -28,12 +20,12 @@ function duplicateZeros(arr) {
     arr[arr.length - 1] = 0;
     des = arr.length - 1;
     cur--;
-  } // 第二轮：从后往前填充
+  } // 第二轮：cur 倒序填充，cur 自身就是读取下标
 
 
-  for (var _i = cur; _i >= 0; _i--) {
-    if (arr[_i]) {
-      arr[--des] = arr[_i];
+  for (; cur >= 0; cur--) {
+    if (arr[cur]) {
+      arr[--des] = arr[cur];
     } else {
       arr[--des] = 0;
       arr[--des] = 0;
@@ -42,8 +34,104 @@ function duplicateZeros(arr) {
 
   return arr;
 }
+/*
+function duplicateZeros(arr: number[]): void {
+    let cur = 0, des = 0
+    for (; cur < arr.length; cur++) {
+        if (arr[cur]) {
+            des += 2
+        } else {
+            des++
+        }
+        if (des >= arr.length) {
+            break
+        }
+    }
+    if (des > arr.length) {
+        arr[arr.length - 1] = 0
+        des = arr.length - 1
+        cur--
+    }
+    for (; cur >= 0; cur--) {
+        if (arr[cur]) {
+            arr[--des] = arr[cur]
+        } else {
+            arr[--des] = 0
+            arr[--des] = 0
+        }
+    }
+};
+*/
+// ============================================
+// des = -1 版本：des 表示"结果数组最后填到的位置"
+// ============================================
 
-console.log(duplicateZeros(arr3)); // duplicateZero(arr1)
+
+function duplicateZerosV2(arr) {
+  var des = -1; // 结果数组最后填充位置
+
+  var cur = -1; // 最后处理的原始索引
+  // 第一轮：找到截断点
+
+  for (var i = 0; i < arr.length; i++) {
+    cur++;
+    des += arr[i] ? 1 : 2;
+    if (des >= arr.length - 1) break;
+  } // 边界：最后一个 0 溢出一份，手动填到末尾
+
+
+  if (des === arr.length) {
+    arr[arr.length - 1] = 0;
+    des = arr.length - 2;
+    cur--;
+  } // 第二轮：从后往前写
+
+
+  for (var _i = cur; _i >= 0; _i--) {
+    if (arr[_i]) {
+      arr[des--] = arr[cur--];
+    } else {
+      arr[des--] = 0;
+      arr[des--] = 0;
+      cur--;
+    }
+  }
+
+  return arr;
+} // ============================================
+// 更优解：一次计数 + 一次倒序填充
+// 核心思路：zeros 作为每个元素的"右移偏移量"，
+// 从右往左处理时，遇到 0 就递减 zeros，
+// 保证左侧元素不会再被这个 0 的右移影响。
+// ============================================
+
+
+function duplicateZerosBest(arr) {
+  var n = arr.length; // 统计所有 0 的个数
+
+  var zeros = 0;
+
+  for (var i = 0; i < n; i++) {
+    if (arr[i] === 0) zeros++;
+  } // 从右往左写
+
+
+  for (var _i2 = n - 1; _i2 >= 0; _i2--) {
+    if (arr[_i2] === 0) {
+      if (_i2 + zeros < n) arr[_i2 + zeros] = 0; // 复制的 0（靠右）
+
+      zeros--;
+      if (_i2 + zeros < n) arr[_i2 + zeros] = 0; // 原始的 0（靠左）
+    } else {
+      if (_i2 + zeros < n) arr[_i2 + zeros] = arr[_i2];
+    }
+  }
+
+  return arr;
+}
+
+console.log(duplicateZeros(arr3));
+console.log(duplicateZerosBest(arr3)); // duplicateZero(arr1)
 // console.log(arr, 'duparr', arr1)
 // function swap(arr, i, j) {
 //   arr[j] = arr.splice(i, 1, arr[j])[0]
@@ -62,23 +150,18 @@ console.log(duplicateZeros(arr3)); // duplicateZero(arr1)
 // console.log(arr, 'arr3')
 // const arr = [0, 1, 0, 3, 12]
 // 题目要求：将所有0移动到数组末尾l
-
-function swap(arr, i, j) {
-  arr[j] = arr.splice(i, 1, arr[j])[0];
-}
-
-function move(arr) {
-  var des = -1;
-
-  for (var i = 0; i < arr.length; i++) {
-    if (arr[i] != 0) {
-      des++;
-      swap(arr, des, i);
-    }
-  }
-
-  return arr;
-}
-
-move(arr);
-console.log(arr, "ar11r");
+// function swap(arr, i, j) {
+//   arr[j] = arr.splice(i, 1, arr[j])[0];
+// }
+// function move(arr) {
+//   let des = -1;
+//   for (let i = 0; i < arr.length; i++) {
+//     if (arr[i] != 0) {
+//       des++;
+//       swap(arr, des, i);
+//     }
+//   }
+//   return arr;
+// }
+// move(arr);
+// console.log(arr, "ar11r");

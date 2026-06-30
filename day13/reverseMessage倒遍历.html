@@ -1,377 +1,382 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>单词反转 - 从后向前双指针图解</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: "Microsoft YaHei", Consolas, monospace;
-    }
-    body {
-      background: #121212;
-      color: #eee;
-      padding: 20px;
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #409eff;
-    }
-    .desc {
-      line-height: 1.8;
-      margin-bottom: 15px;
-      padding: 10px;
-      background: #1e1e1e;
-      border-radius: 6px;
-    }
-    .tip span {
-      display: inline-block;
-      padding: 2px 8px;
-      margin: 0 5px;
-      border-radius: 4px;
-    }
-    .tip-i {
-      background: #67c23a;
-    }
-    .tip-j {
-      background: #e6a23c;
-    }
-    .tip-word {
-      background: #9c88ff;
-    }
-    /* 字符容器 */
-    .char-box {
-      display: flex;
-      gap: 4px;
-      justify-content: center;
-      margin: 30px 0;
-      flex-wrap: wrap;
-    }
-    .char-item {
-      width: 46px;
-      height: 46px;
-      line-height: 46px;
-      text-align: center;
-      background: #2d2d2d;
-      border: 2px solid #555;
-      border-radius: 6px;
-      font-size: 20px;
-    }
-    .mark-i {
-      border-color: #67c23a;
-      box-shadow: 0 0 6px #67c23a;
-    }
-    .mark-j {
-      border-color: #e6a23c;
-      box-shadow: 0 0 6px #e6a23c;
-    }
-    .mark-word {
-      border-color: #9c88ff;
-      box-shadow: 0 0 6px #9c88ff;
-    }
-    /* 按钮区 */
-    .btn-group {
-      text-align: center;
-      margin: 20px 0;
-    }
-    button {
-      padding: 8px 18px;
-      font-size: 15px;
-      margin: 0 8px;
-      border: none;
-      border-radius: 4px;
-      background: #409eff;
-      color: #fff;
-      cursor: pointer;
-    }
-    button:disabled {
-      background: #555;
-      cursor: not-allowed;
-    }
-    /* 步骤 & 结果 */
-    .step-info, .res-info {
-      margin: 15px 0;
-      padding: 12px;
-      background: #1e1e1e;
-      border-radius: 6px;
-      font-size: 16px;
-    }
-    /* 代码区域 */
-    .code-wrap {
-      margin-top: 25px;
-      background: #1e1e1e;
-      padding: 15px;
-      border-radius: 6px;
-    }
-    .code-line {
-      display: block;
-      padding: 2px 6px;
-      line-height: 1.6;
-      font-size: 14px;
-    }
-    .active-line {
-      background: #332452;
-    }
-  </style>
-</head>
-<body>
-  <h2>单词反转 | 从后向前双指针 可视化图解</h2>
-
-  <div class="desc tip">
-    <div>指针说明：<span class="tip-i">i 指针(绿色)</span> 向左查找边界 &nbsp;
-    <span class="tip-j">j 指针(橙色)</span> 标记单词尾部 &nbsp;
-    <span class="tip-word">紫色</span> 截取的单词范围</div>
-    <div id="stepText">当前状态：初始化完成，点击「单步执行」开始演示</div>
-  </div>
-
-  <!-- 字符展示区域 -->
-  <div class="char-box" id="charBox"></div>
-
-  <!-- 按钮 -->
-  <div class="btn-group">
-    <button id="nextBtn">单步执行</button>
-    <button id="autoBtn">自动播放</button>
-    <button id="resetBtn">重置</button>
-  </div>
-
-  <!-- 运行结果 -->
-  <div class="res-info">
-    已收集单词：<span id="resultBox"></span>
-  </div>
-
-  <!-- 代码区域 -->
-  <div class="code-wrap">
-    <div style="margin-bottom:8px;color:#ccc;">核心代码（当前行高亮）</div>
-    <pre id="codeBox"></pre>
-  </div>
-
-<script>
-  // 原始测试字符串
-  const originStr = "the sky is blue";
-  // 代码文本 + 行号
-  const codeList = [
-    {line:1, text:"var reverseWords = function (s) {"},
-    {line:2, text:"  s = s.trim()"},
-    {line:3, text:"  let res = []"},
-    {line:4, text:"  let i = j = s.length - 1"},
-    {line:5, text:"  while (i >= 0) {"},
-    {line:6, text:"    // 向左找到单词前的空格"},
-    {line:7, text:"    while (i >= 0 && s[i] !== ' ') i--"},
-    {line:8, text:"    // 截取单词存入结果"},
-    {line:9, text:"    res.push(s.substring(i + 1, j + 1))"},
-    {line:10,text:"    // 跳过连续空格"},
-    {line:11,text:"    while (i >= 0 && s[i] === ' ') i--"},
-    {line:12,text:"    j = i"},
-    {line:13,text:"  }"},
-    {line:14,text:"  return res.join(' ')"},
-    {line:15,text:"}"}
-  ];
-
-  // 全局变量
-  let str = originStr.trim();
-  let charArr = str.split('');
-  let i = str.length - 1;
-  let j = str.length - 1;
-  let res = [];
-  let timer = null;
-  let stepList = [];
-  let curStep = 0;
-
-  // DOM
-  const charBox = document.getElementById('charBox');
-  const stepText = document.getElementById('stepText');
-  const resultBox = document.getElementById('resultBox');
-  const codeBox = document.getElementById('codeBox');
-  const nextBtn = document.getElementById('nextBtn');
-  const autoBtn = document.getElementById('autoBtn');
-  const resetBtn = document.getElementById('resetBtn');
-
-  // 构建每一步状态
-  function buildStepQueue() {
-    stepList = [];
-    let s = originStr.trim();
-    let arr = s.split('');
-    let idxI = arr.length - 1;
-    let idxJ = arr.length - 1;
-    let tempRes = [];
-
-    // 初始状态
-    stepList.push({
-      desc: `初始化：i=${idxI}，j=${idxJ}，双指针指向字符串末尾`,
-      i: idxI,
-      j: idxJ,
-      wordStart: -1,
-      wordEnd: -1,
-      res: [...tempRes],
-      codeLine: 4
-    });
-
-    while (idxI >= 0) {
-      // 1. 向左找空格
-      while (idxI >= 0 && arr[idxI] !== ' ') idxI--;
-      stepList.push({
-        desc: `i 左移至单词前空格位置：i=${idxI}`,
-        i: idxI,
-        j: idxJ,
-        wordStart: idxI + 1,
-        wordEnd: idxJ,
-        res: [...tempRes],
-        codeLine: 7
-      });
-
-      // 截取单词
-      let word = s.substring(idxI + 1, idxJ + 1);
-      tempRes.push(word);
-      stepList.push({
-        desc: `截取单词【${word}】，加入结果数组`,
-        i: idxI,
-        j: idxJ,
-        wordStart: idxI + 1,
-        wordEnd: idxJ,
-        res: [...tempRes],
-        codeLine: 9
-      });
-
-      // 2. 跳过空格
-      while (idxI >= 0 && arr[idxI] === ' ') idxI--;
-      stepList.push({
-        desc: `i 跳过连续空格：i=${idxI}`,
-        i: idxI,
-        j: idxJ,
-        wordStart: -1,
-        wordEnd: -1,
-        res: [...tempRes],
-        codeLine: 11
-      });
-
-      // 更新 j
-      idxJ = idxI;
-      stepList.push({
-        desc: `更新 j = i，当前 j=${idxJ}，准备查找下一个单词`,
-        i: idxI,
-        j: idxJ,
-        wordStart: -1,
-        wordEnd: -1,
-        res: [...tempRes],
-        codeLine: 12
-      });
-    }
-
-    // 最终结果
-    stepList.push({
-      desc: `遍历结束，最终结果：${tempRes.join(' ')}`,
-      i: -1,
-      j: -1,
-      wordStart: -1,
-      wordEnd: -1,
-      res: [...tempRes],
-      codeLine: 14
-    });
-  }
-
-  // 渲染字符 + 指针标记
-  function renderChars(state) {
-    charBox.innerHTML = '';
-    charArr.forEach((char, index) => {
-      const div = document.createElement('div');
-      div.className = 'char-item';
-      div.textContent = char === ' ' ? '·' : char;
-
-      // 标记单词区间
-      if (state.wordStart !== -1 && index >= state.wordStart && index <= state.wordEnd) {
-        div.classList.add('mark-word');
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>单词反转 - 从后向前双指针图解</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Microsoft YaHei", Consolas, monospace;
       }
-      // 标记 i
-      if (index === state.i) {
-        div.classList.add('mark-i');
+      body {
+        background: #121212;
+        color: #eee;
+        padding: 20px;
+        max-width: 1100px;
+        margin: 0 auto;
       }
-      // 标记 j
-      if (index === state.j) {
-        div.classList.add('mark-j');
+      h2 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #409eff;
       }
-      charBox.appendChild(div);
-    });
-  }
-
-  // 渲染代码高亮
-  function renderCode(activeLine) {
-    codeBox.innerHTML = '';
-    codeList.forEach(item => {
-      const span = document.createElement('span');
-      span.className = 'code-line';
-      span.textContent = item.text;
-      if (item.line === activeLine) {
-        span.classList.add('active-line');
+      .desc {
+        line-height: 1.8;
+        margin-bottom: 15px;
+        padding: 10px;
+        background: #1e1e1e;
+        border-radius: 6px;
       }
-      codeBox.appendChild(span);
-    });
-  }
+      .tip span {
+        display: inline-block;
+        padding: 2px 8px;
+        margin: 0 5px;
+        border-radius: 4px;
+      }
+      .tip-i {
+        background: #67c23a;
+      }
+      .tip-j {
+        background: #e6a23c;
+      }
+      .tip-word {
+        background: #9c88ff;
+      }
+      /* 字符容器 */
+      .char-box {
+        display: flex;
+        gap: 4px;
+        justify-content: center;
+        margin: 30px 0;
+        flex-wrap: wrap;
+      }
+      .char-item {
+        width: 46px;
+        height: 46px;
+        line-height: 46px;
+        text-align: center;
+        background: #2d2d2d;
+        border: 2px solid #555;
+        border-radius: 6px;
+        font-size: 20px;
+      }
+      .mark-i {
+        border-color: #67c23a;
+        box-shadow: 0 0 6px #67c23a;
+      }
+      .mark-j {
+        border-color: #e6a23c;
+        box-shadow: 0 0 6px #e6a23c;
+      }
+      .mark-word {
+        border-color: #9c88ff;
+        box-shadow: 0 0 6px #9c88ff;
+      }
+      /* 按钮区 */
+      .btn-group {
+        text-align: center;
+        margin: 20px 0;
+      }
+      button {
+        padding: 8px 18px;
+        font-size: 15px;
+        margin: 0 8px;
+        border: none;
+        border-radius: 4px;
+        background: #409eff;
+        color: #fff;
+        cursor: pointer;
+      }
+      button:disabled {
+        background: #555;
+        cursor: not-allowed;
+      }
+      /* 步骤 & 结果 */
+      .step-info,
+      .res-info {
+        margin: 15px 0;
+        padding: 12px;
+        background: #1e1e1e;
+        border-radius: 6px;
+        font-size: 16px;
+      }
+      /* 代码区域 */
+      .code-wrap {
+        margin-top: 25px;
+        background: #1e1e1e;
+        padding: 15px;
+        border-radius: 6px;
+      }
+      .code-line {
+        display: block;
+        padding: 2px 6px;
+        line-height: 1.6;
+        font-size: 14px;
+      }
+      .active-line {
+        background: #332452;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>单词反转 | 从后向前双指针 可视化图解</h2>
 
-  // 渲染单步视图
-  function renderStep() {
-    if (curStep >= stepList.length) return;
-    const state = stepList[curStep];
-    stepText.textContent = `步骤 ${curStep+1}/${stepList.length}：${state.desc}`;
-    resultBox.textContent = state.res.join('  |  ');
-    renderChars(state);
-    renderCode(state.codeLine);
-  }
+    <div class="desc tip">
+      <div>
+        指针说明：<span class="tip-i">i 指针(绿色)</span> 向左查找边界 &nbsp;
+        <span class="tip-j">j 指针(橙色)</span> 标记单词尾部 &nbsp;
+        <span class="tip-word">紫色</span> 截取的单词范围
+      </div>
+      <div id="stepText">当前状态：初始化完成，点击「单步执行」开始演示</div>
+    </div>
 
-  // 单步执行
-  function nextStep() {
-    if (curStep >= stepList.length) {
-      nextBtn.disabled = true;
-      return;
-    }
-    renderStep();
-    curStep++;
-  }
+    <!-- 字符展示区域 -->
+    <div class="char-box" id="charBox"></div>
 
-  // 自动播放
-  function autoPlay() {
-    if (timer) return;
-    autoBtn.disabled = true;
-    nextBtn.disabled = true;
-    timer = setInterval(() => {
-      if (curStep >= stepList.length) {
+    <!-- 按钮 -->
+    <div class="btn-group">
+      <button id="nextBtn">单步执行</button>
+      <button id="autoBtn">自动播放</button>
+      <button id="resetBtn">重置</button>
+    </div>
+
+    <!-- 运行结果 -->
+    <div class="res-info">已收集单词：<span id="resultBox"></span></div>
+
+    <!-- 代码区域 -->
+    <div class="code-wrap">
+      <div style="margin-bottom: 8px; color: #ccc">核心代码（当前行高亮）</div>
+      <pre id="codeBox"></pre>
+    </div>
+
+    <script>
+      // 原始测试字符串
+      const originStr = "the sky is blue";
+      // 代码文本 + 行号
+      const codeList = [
+        { line: 1, text: "var reverseWords = function (s) {" },
+        { line: 2, text: "  s = s.trim()" },
+        { line: 3, text: "  let res = []" },
+        { line: 4, text: "  let i = j = s.length - 1" },
+        { line: 5, text: "  while (i >= 0) {" },
+        { line: 6, text: "    // 向左找到单词前的空格" },
+        { line: 7, text: "    while (i >= 0 && s[i] !== ' ') i--" },
+        { line: 8, text: "    // 截取单词存入结果" },
+        { line: 9, text: "    res.push(s.substring(i + 1, j + 1))" },
+        { line: 10, text: "    // 跳过连续空格" },
+        { line: 11, text: "    while (i >= 0 && s[i] === ' ') i--" },
+        { line: 12, text: "    j = i" },
+        { line: 13, text: "  }" },
+        { line: 14, text: "  return res.join(' ')" },
+        { line: 15, text: "}" },
+      ];
+
+      // 全局变量
+      let str = originStr.trim();
+      let charArr = str.split("");
+      let i = str.length - 1;
+      let j = str.length - 1;
+      let res = [];
+      let timer = null;
+      let stepList = [];
+      let curStep = 0;
+
+      // DOM
+      const charBox = document.getElementById("charBox");
+      const stepText = document.getElementById("stepText");
+      const resultBox = document.getElementById("resultBox");
+      const codeBox = document.getElementById("codeBox");
+      const nextBtn = document.getElementById("nextBtn");
+      const autoBtn = document.getElementById("autoBtn");
+      const resetBtn = document.getElementById("resetBtn");
+
+      // 构建每一步状态
+      function buildStepQueue() {
+        stepList = [];
+        let s = originStr.trim();
+        let arr = s.split("");
+        let idxI = arr.length - 1;
+        let idxJ = arr.length - 1;
+        let tempRes = [];
+
+        // 初始状态
+        stepList.push({
+          desc: `初始化：i=${idxI}，j=${idxJ}，双指针指向字符串末尾`,
+          i: idxI,
+          j: idxJ,
+          wordStart: -1,
+          wordEnd: -1,
+          res: [...tempRes],
+          codeLine: 4,
+        });
+
+        while (idxI >= 0) {
+          // 1. 向左找空格
+          while (idxI >= 0 && arr[idxI] !== " ") idxI--;
+          stepList.push({
+            desc: `i 左移至单词前空格位置：i=${idxI}`,
+            i: idxI,
+            j: idxJ,
+            wordStart: idxI + 1,
+            wordEnd: idxJ,
+            res: [...tempRes],
+            codeLine: 7,
+          });
+
+          // 截取单词
+          let word = s.substring(idxI + 1, idxJ + 1);
+          tempRes.push(word);
+          stepList.push({
+            desc: `截取单词【${word}】，加入结果数组`,
+            i: idxI,
+            j: idxJ,
+            wordStart: idxI + 1,
+            wordEnd: idxJ,
+            res: [...tempRes],
+            codeLine: 9,
+          });
+
+          // 2. 跳过空格
+          while (idxI >= 0 && arr[idxI] === " ") idxI--;
+          stepList.push({
+            desc: `i 跳过连续空格：i=${idxI}`,
+            i: idxI,
+            j: idxJ,
+            wordStart: -1,
+            wordEnd: -1,
+            res: [...tempRes],
+            codeLine: 11,
+          });
+
+          // 更新 j
+          idxJ = idxI;
+          stepList.push({
+            desc: `更新 j = i，当前 j=${idxJ}，准备查找下一个单词`,
+            i: idxI,
+            j: idxJ,
+            wordStart: -1,
+            wordEnd: -1,
+            res: [...tempRes],
+            codeLine: 12,
+          });
+        }
+
+        // 最终结果
+        stepList.push({
+          desc: `遍历结束，最终结果：${tempRes.join(" ")}`,
+          i: -1,
+          j: -1,
+          wordStart: -1,
+          wordEnd: -1,
+          res: [...tempRes],
+          codeLine: 14,
+        });
+      }
+
+      // 渲染字符 + 指针标记
+      function renderChars(state) {
+        charBox.innerHTML = "";
+        charArr.forEach((char, index) => {
+          const div = document.createElement("div");
+          div.className = "char-item";
+          div.textContent = char === " " ? "·" : char;
+
+          // 标记单词区间
+          if (
+            state.wordStart !== -1 &&
+            index >= state.wordStart &&
+            index <= state.wordEnd
+          ) {
+            div.classList.add("mark-word");
+          }
+          // 标记 i
+          if (index === state.i) {
+            div.classList.add("mark-i");
+          }
+          // 标记 j
+          if (index === state.j) {
+            div.classList.add("mark-j");
+          }
+          charBox.appendChild(div);
+        });
+      }
+
+      // 渲染代码高亮
+      function renderCode(activeLine) {
+        codeBox.innerHTML = "";
+        codeList.forEach((item) => {
+          const span = document.createElement("span");
+          span.className = "code-line";
+          span.textContent = item.text;
+          if (item.line === activeLine) {
+            span.classList.add("active-line");
+          }
+          codeBox.appendChild(span);
+        });
+      }
+
+      // 渲染单步视图
+      function renderStep() {
+        if (curStep >= stepList.length) return;
+        const state = stepList[curStep];
+        stepText.textContent = `步骤 ${curStep + 1}/${stepList.length}：${state.desc}`;
+        resultBox.textContent = state.res.join("  |  ");
+        renderChars(state);
+        renderCode(state.codeLine);
+      }
+
+      // 单步执行
+      function nextStep() {
+        if (curStep >= stepList.length) {
+          nextBtn.disabled = true;
+          return;
+        }
+        renderStep();
+        curStep++;
+      }
+
+      // 自动播放
+      function autoPlay() {
+        if (timer) return;
+        autoBtn.disabled = true;
+        nextBtn.disabled = true;
+        timer = setInterval(() => {
+          if (curStep >= stepList.length) {
+            clearInterval(timer);
+            timer = null;
+            autoBtn.disabled = false;
+            nextBtn.disabled = false;
+            return;
+          }
+          nextStep();
+        }, 1500);
+      }
+
+      // 重置
+      function reset() {
         clearInterval(timer);
         timer = null;
-        autoBtn.disabled = false;
+        curStep = 0;
+        i = str.length - 1;
+        j = str.length - 1;
+        res = [];
         nextBtn.disabled = false;
-        return;
+        autoBtn.disabled = false;
+        buildStepQueue();
+        renderStep();
       }
-      nextStep();
-    }, 1500);
-  }
 
-  // 重置
-  function reset() {
-    clearInterval(timer);
-    timer = null;
-    curStep = 0;
-    i = str.length - 1;
-    j = str.length - 1;
-    res = [];
-    nextBtn.disabled = false;
-    autoBtn.disabled = false;
-    buildStepQueue();
-    renderStep();
-  }
+      // 绑定事件
+      nextBtn.addEventListener("click", nextStep);
+      autoBtn.addEventListener("click", autoPlay);
+      resetBtn.addEventListener("click", reset);
 
-  // 绑定事件
-  nextBtn.addEventListener('click', nextStep);
-  autoBtn.addEventListener('click', autoPlay);
-  resetBtn.addEventListener('click', reset);
-
-  // 初始化
-  buildStepQueue();
-  renderStep();
-</script>
-</body>
+      // 初始化
+      buildStepQueue();
+      renderStep();
+    </script>
+  </body>
 </html>

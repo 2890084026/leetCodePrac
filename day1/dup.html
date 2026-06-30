@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Duplicate Zeros 三种算法可视化</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Consolas,Microsoft YaHei}
+body{background:#121212;color:#eee;padding:24px;max-width:1400px;margin:0 auto}
+h1{text-align:center;margin-bottom:20px;color:#4fc3f7;font-size:24px}
+/* Tab 样式 */
+.tab-group{margin-bottom:20px}
+.tab-buttons{display:flex;border-bottom:1px solid #444}
+.tab-btn{padding:10px 18px;background:transparent;border:none;color:#aaa;font-size:15px;cursor:pointer;border-bottom:3px solid transparent}
+.tab-btn.active{color:#4fc3f7;border-bottom-color:#4fc3f7}
+.tab-panel{display:none;padding:16px 0}
+.tab-panel.show{display:block}
+/* 控制面板 */
+.control-bar{display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+.control-bar input{padding:7px 10px;width:300px;background:#222;border:1px solid #555;color:#fff;border-radius:4px}
+button{padding:7px 14px;border:none;border-radius:4px;cursor:pointer}
+.btn-reset{background:#607d8b;color:#fff}
+.btn-step{background:#00897b;color:#fff}
+.btn-auto{background:#1976d2;color:#fff}
+button:disabled{background:#444;color:#888;cursor:not-allowed}
+.slider-wrap{display:flex;align-items:center;gap:8px;color:#ccc}
+/* 数组可视化 */
+.array-title{font-size:16px;margin:12px 0 8px;color:#ddd}
+.array-view{display:flex;gap:6px;min-height:80px;align-items:flex-end;margin-bottom:16px}
+.array-item{width:56px;height:56px;display:flex;align-items:center;justify-content:center;background:#1e1e1e;border:2px solid #555;border-radius:6px;font-size:18px;position:relative}
+.array-item.zero{background:#424200;border-color:#ffc107}
+.array-item.mark-cur{box-shadow:0 0 0 3px #2196f3}
+.array-item.mark-des{box-shadow:0 0 0 3px #f44336}
+.array-item.mark-copy{background:#004222;border-color:#4caf50}
+.index-tag{position:absolute;bottom:-20px;font-size:11px;color:#999}
+/* 日志区域 */
+.log-area{background:#1e1e1e;padding:12px;border-radius:6px;min-height:140px;max-height:220px;overflow-y:auto;color:#b2ebf2;white-space:pre-line;margin-bottom:20px}
+/* 代码高亮区域 */
+.code-title{font-size:16px;margin-bottom:8px;color:#ddd}
+.code-container{background:#0d0d0d;padding:14px;border-radius:6px;max-height:400px;overflow-y:auto}
+.code-line{display:block;padding:2px 4px;white-space:pre;color:#89ddff}
+.code-line.active{background:#0f3458;outline:1px solid #4fc3f7}
+</style>
+</head>
+<body>
+<h1>Duplicate Zeros 三种算法分步动画可视化</h1>
+
+<div class="tab-group">
+  <div class="tab-buttons">
+    <button class="tab-btn active" data-tab="tab1">算法1：基础双指针 duplicateZeros</button>
+    <button class="tab-btn" data-tab="tab2">算法2：des=-1改良 duplicateZerosV2</button>
+    <button class="tab-btn" data-tab="tab3">算法3：最优偏移 duplicateZerosBest</button>
+  </div>
+
+  <!-- Tab1 基础版 -->
+  <div class="tab-panel show" id="tab1">
+    <div class="control-bar">
+      <input id="arrIn1" value="[1, 0, 2, 3, 0, 4, 5, 0]">
+      <button class="btn-reset" id="reset1" onclick="initTab1()">重置数组</button>
+      <button class="btn-step" id="step1" onclick="stepTab1()">单步执行</button>
+      <button class="btn-auto" id="auto1" onclick="runAllTab1()">自动完整运行</button>
+      <div class="slider-wrap">
+        <span>动画速度</span>
+        <input type="range" id="speed1" min="100" max="1500" value="600">
+      </div>
+    </div>
+    <div class="array-title">数组可视化面板</div>
+    <div class="array-view" id="arrBox1"></div>
+    <div class="log-area" id="log1">执行日志输出区...</div>
+    <div class="code-title">完整源码（执行行自动高亮）</div>
+    <div class="code-container" id="code1"></div>
+  </div>
+
+  <!-- Tab2 V2改良版 -->
+  <div class="tab-panel" id="tab2">
+    <div class="control-bar">
+      <input id="arrIn2" value="[1,0,2,3,0,4,5,0]">
+      <button class="btn-reset" id="reset2" onclick="initTab2()">重置数组</button>
+      <button class="btn-step" id="step2" onclick="stepTab2()">单步执行</button>
+      <button class="btn-auto" id="auto2" onclick="runAllTab2()">自动完整运行</button>
+      <div class="slider-wrap">
+        <span>动画速度</span>
+        <input type="range" id="speed2" min="100" max="1500" value="600">
+      </div>
+    </div>
+    <div class="array-title">数组可视化面板</div>
+    <div class="array-view" id="arrBox2"></div>
+    <div class="log-area" id="log2">执行日志输出区...</div>
+    <div class="code-title">完整源码（执行行自动高亮）</div>
+    <div class="code-container" id="code2"></div>
+  </div>
+
+  <!-- Tab3 最优偏移版 -->
+  <div class="tab-panel" id="tab3">
+    <div class="control-bar">
+      <input id="arrIn3" value="[1,0,2,3,0,4,5,0]">
+      <button class="btn-reset" id="reset3" onclick="initTab3()">重置数组</button>
+      <button class="btn-step" id="step3" onclick="stepTab3()">单步执行</button>
+      <button class="btn-auto" id="auto3" onclick="runAllTab3()">自动完整运行</button>
+      <div class="slider-wrap">
+        <span>动画速度</span>
+        <input type="range" id="speed3" min="100" max="1500" value="600">
+      </div>
+    </div>
+    <div class="array-title">数组可视化面板</div>
+    <div class="array-view" id="arrBox3"></div>
+    <div class="log-area" id="log3">执行日志输出区...</div>
+    <div class="code-title">完整源码（执行行自动高亮）</div>
+    <div class="code-container" id="code3"></div>
+  </div>
+</div>
+
+<script>
+// Tab切换
+const tabBtns = document.querySelectorAll(".tab-btn");
+const tabPanels = document.querySelectorAll(".tab-panel");
+tabBtns.forEach(btn=>{
+  btn.onclick = ()=>{
+    let target = btn.dataset.tab;
+    tabBtns.forEach(b=>b.classList.remove("active"));
+    tabPanels.forEach(p=>p.classList.remove("show"));
+    btn.classList.add("active");
+    document.getElementById(target).classList.add("show");
+  }
+})
+
+// 公共工具
+function parseArr(str){
+  try{return JSON.parse(str)}catch(e){alert("数组格式错误，示例 [1,0,2]");return []}
+}
+function renderArr(boxId, arr, cur=-1, des=-1, copy=-1){
+  let box = document.getElementById(boxId);
+  box.innerHTML = "";
+  arr.forEach((val,i)=>{
+    let item = document.createElement("div");
+    item.className = "array-item";
+    if(val===0) item.classList.add("zero");
+    if(i===cur) item.classList.add("mark-cur");
+    if(i===des) item.classList.add("mark-des");
+    if(i===copy) item.classList.add("mark-copy");
+    item.innerText = val;
+    let idxTag = document.createElement("span");
+    idxTag.className = "index-tag";
+    idxTag.innerText = i;
+    item.appendChild(idxTag);
+    box.appendChild(item);
+  })
+}
+var _logState = null;
+function addLog(logId, txt){
+  let log = document.getElementById(logId);
+  let suffix = '';
+  if (_logState) {
+    if ('cur' in _logState) suffix = '  [cur=' + _logState.cur + ']';
+    else if ('zeros' in _logState) suffix = '  [zeros=' + _logState.zeros + ']';
+  }
+  log.innerHTML += txt + suffix + "\n";
+  log.scrollTop = log.scrollHeight;
+}
+function clearLog(logId){document.getElementById(logId).innerHTML = ""}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+// 代码渲染+高亮
+function renderCode(codeWrapId, codeStr, highlight=-1){
+  let wrap = document.getElementById(codeWrapId);
+  wrap.innerHTML = "";
+  let lines = codeStr.split("\n");
+  lines.forEach((line,idx)=>{
+    let span = document.createElement("span");
+    span.className = "code-line";
+    if(idx === highlight) span.classList.add("active");
+    span.textContent = line;
+    wrap.appendChild(span);
+  })
+  if(highlight>=0) wrap.children[highlight]?.scrollIntoView({block:"center"});
+  return lines;
+}
+
+// ========== 算法1 duplicateZeros ==========
+const code1 = `function duplicateZeros(arr) {
+  let des = 0; // 已消费的槽位数
+  let cur = 0; // 最后处理的原始索引
+  // 第一轮：找到截断位置
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i]) {
+      des += 1;
+    } else {
+      des += 2;
+    }
+    if (des >= arr.length) {
+      cur = i;
+      break;
+    }
+  }
+  // 边界：最后一个 0 只能放一份拷贝
+  if (des > arr.length) {
+    arr[arr.length - 1] = 0;
+    des = arr.length - 1;
+    cur--;
+  }
+  // 第二轮：从后往前填充
+  for (let i = cur; i >= 0; i--) {
+    if (arr[i]) {
+      arr[--des] = arr[i];
+    } else {
+      arr[--des] = 0;
+      arr[--des] = 0;
+    }
+  }
+  return arr;
+}`;
+let tab1 = {arr:[],des:0,cur:0,i:0,phase:1,autoRun:false,done:false,hl:-1}
+renderCode("code1",code1,-1);
+function setBtn1(dis){
+  document.getElementById("step1").disabled = dis;
+  document.getElementById("auto1").disabled = dis;
+}
+function initTab1(){
+  _logState = tab1;
+  tab1.arr = parseArr(document.getElementById("arrIn1").value);
+  tab1.des=0;tab1.cur=0;tab1.i=0;tab1.phase=1;tab1.autoRun=false;tab1.done=false;tab1.hl=-1;
+  clearLog("log1");renderArr("arrBox1",tab1.arr);renderCode("code1",code1,-1);setBtn1(false);
+  addLog("log1","【初始化】数组："+JSON.stringify(tab1.arr));
+}
+async function stepTab1(){
+  let s = tab1;
+  _logState = s;
+  let sp = +document.getElementById("speed1").value;
+  let n = s.arr.length;
+  if(s.done) return; setBtn1(true);
+  if(s.phase ===1){
+    let i = s.i;
+    s.hl=4;renderCode("code1",code1,s.hl);addLog("log1",`计数循环 i=${i}, arr[i]=${s.arr[i]}, des=${s.des}`);await sleep(sp/2);
+    s.hl = s.arr[i]?5:7;renderCode("code1",code1,s.hl);
+    s.arr[i]?s.des+=1:s.des+=2;renderArr("arrBox1",s.arr,i,s.des-1);await sleep(sp);
+    s.hl=9;renderCode("code1",code1,s.hl);
+    if(s.des >= n){s.cur=i;addLog("log1",`计数结束 cur=${i}，进入边界判断`);s.phase=2;}else{s.i++}
+  }else if(s.phase===2){
+    s.hl=12;renderCode("code1",code1,s.hl);addLog("log1",`边界判断 des=${s.des}`);await sleep(sp/2);
+    if(s.des>n){
+      s.hl=13;renderCode("code1",code1,s.hl);
+      s.arr[n-1]=0;renderArr("arrBox1",s.arr,-1,n-1);addLog("log1",`末尾填充单个0 arr[${n-1}]=0`);
+      s.des=n-1;s.cur--;await sleep(sp);
+    }
+    addLog("log1",`进入倒序填充 cur=${s.cur}, des=${s.des}`);s.i=s.cur;s.phase=3;
+  }else if(s.phase===3){
+    let i = s.i;
+    s.hl=17;renderCode("code1",code1,s.hl);addLog("log1",`回填 i=${i}, val=${s.arr[i]}, des=${s.des}`);await sleep(sp/2);
+    if(s.arr[i]){
+      s.hl=18;renderCode("code1",code1,s.hl);
+      s.des--;s.arr[s.des]=s.arr[i];renderArr("arrBox1",s.arr,i,s.des);
+    }else{
+      s.hl=20;renderCode("code1",code1,s.hl);
+      s.des--;s.arr[s.des]=0;renderArr("arrBox1",s.arr,i,s.des,s.des+1);await sleep(sp);
+      s.hl=21;renderCode("code1",code1,s.hl);
+      s.des--;s.arr[s.des]=0;renderArr("arrBox1",s.arr,i,s.des);
+    }
+    await sleep(sp);s.i--;
+    if(s.i<0){addLog("log1","算法执行完成！结果："+JSON.stringify(s.arr));s.done=true;renderCode("code1",code1,-1);setBtn1(true)}
+  }
+  if(!s.done && !s.autoRun) setBtn1(false);
+}
+async function runAllTab1(){
+  if(tab1.autoRun || tab1.done) return;
+  tab1.autoRun=true;setBtn1(true);
+  while(tab1.autoRun && !tab1.done) await stepTab1();
+  tab1.autoRun=false;
+}
+
+// ========== 算法2 duplicateZerosV2 ==========
+const code2 = `function duplicateZerosV2(arr) {
+  let des = -1; // 结果数组最后填充位置
+  let cur = -1; // 最后处理的原始索引
+  // 第一轮：找到截断点
+  for (let i = 0; i < arr.length; i++) {
+    cur++;
+    des += arr[i] ? 1 : 2;
+    if (des >= arr.length - 1) break;
+  }
+  // 边界：最后一个 0 溢出一份，手动填到末尾
+  if (des === arr.length) {
+    arr[arr.length - 1] = 0;
+    des = arr.length - 2;
+    cur--;
+  }
+  // 第二轮：从后往前写
+  for (let i = cur; i >= 0; i--) {
+    if (arr[i]) {
+      arr[des--] = arr[cur--];
+    } else {
+      arr[des--] = 0;
+      arr[des--] = 0;
+      cur--;
+    }
+  }
+  return arr;
+}`;
+let tab2 = {arr:[],des:-1,cur:-1,i:0,phase:1,autoRun:false,done:false,hl:-1}
+renderCode("code2",code2,-1);
+function setBtn2(dis){
+  document.getElementById("step2").disabled = dis;
+  document.getElementById("auto2").disabled = dis;
+}
+function initTab2(){
+  _logState = tab2;
+  tab2.arr = parseArr(document.getElementById("arrIn2").value);
+  tab2.des=-1;tab2.cur=-1;tab2.i=0;tab2.phase=1;tab2.autoRun=false;tab2.done=false;tab2.hl=-1;
+  clearLog("log2");renderArr("arrBox2",tab2.arr);renderCode("code2",code2,-1);setBtn2(false);
+  addLog("log2","【初始化】数组："+JSON.stringify(tab2.arr));
+}
+async function stepTab2(){
+  let s = tab2;
+  _logState = s;
+  let sp = +document.getElementById("speed2").value;
+  let n = s.arr.length;
+  if(s.done) return; setBtn2(true);
+  if(s.phase ===1){
+    let i = s.i;
+    s.hl=5;renderCode("code2",code2,s.hl);s.cur++;addLog("log2",`计数 i=${i}, cur=${s.cur}, des=${s.des}`);await sleep(sp/2);
+    s.hl=6;renderCode("code2",code2,s.hl);
+    let add = s.arr[i]?1:2;s.des += add;renderArr("arrBox2",s.arr,i,s.des);await sleep(sp);
+    s.hl=7;renderCode("code2",code2,s.hl);
+    if(s.des >= n-1){addLog("log2","计数截断，进入边界判断");s.phase=2;}else{s.i++}
+  }else if(s.phase===2){
+    s.hl=10;renderCode("code2",code2,s.hl);addLog("log2",`边界判断 des=${s.des}`);await sleep(sp/2);
+    if(s.des === n){
+      s.hl=11;renderCode("code2",code2,s.hl);
+      s.arr[n-1]=0;renderArr("arrBox2",s.arr,-1,n-1);addLog("log2",`末尾填充单个0 arr[${n-1}]=0`);
+      s.des=n-2;s.cur--;await sleep(sp);
+    }
+    addLog("log2",`进入倒序填充 cur=${s.cur}, des=${s.des}`);s.i=s.cur;s.phase=3;
+  }else if(s.phase===3){
+    let i = s.i;
+    s.hl=15;renderCode("code2",code2,s.hl);addLog("log2",`回填 i=${i}, val=${s.arr[i]}, des=${s.des}`);await sleep(sp/2);
+    if(s.arr[i]){
+      s.hl=16;renderCode("code2",code2,s.hl);
+      s.arr[s.des]=s.arr[i];renderArr("arrBox2",s.arr,i,s.des);s.des--;s.cur--;
+    }else{
+      s.hl=18;renderCode("code2",code2,s.hl);
+      s.arr[s.des]=0;renderArr("arrBox2",s.arr,i,s.des,s.des+1);await sleep(sp);
+      s.hl=19;renderCode("code2",code2,s.hl);
+      s.des--;s.arr[s.des]=0;renderArr("arrBox2",s.arr,i,s.des);s.des--;s.cur--;
+    }
+    await sleep(sp);s.i--;
+    if(s.i<0){addLog("log2","算法执行完成！结果："+JSON.stringify(s.arr));s.done=true;renderCode("code2",code2,-1);setBtn2(true)}
+  }
+  if(!s.done && !s.autoRun) setBtn2(false);
+}
+async function runAllTab2(){
+  if(tab2.autoRun || tab2.done) return;
+  tab2.autoRun=true;setBtn2(true);
+  while(tab2.autoRun && !tab2.done) await stepTab2();
+  tab2.autoRun=false;
+}
+
+// ========== 算法3 duplicateZerosBest ==========
+const code3 = `function duplicateZerosBest(arr) {
+  const n = arr.length;
+  // 统计所有 0 的个数
+  let zeros = 0;
+  for (let i = 0; i < n; i++) {
+    if (arr[i] === 0) zeros++;
+  }
+  // 从右往左写
+  for (let i = n - 1; i >= 0; i--) {
+    if (arr[i] === 0) {
+      if (i + zeros < n) arr[i + zeros] = 0; // 复制的 0（靠右）
+      zeros--;
+      if (i + zeros < n) arr[i + zeros] = 0; // 原始的 0（靠左）
+    } else {
+      if (i + zeros < n) arr[i + zeros] = arr[i];
+    }
+  }
+  return arr;
+}`;
+let tab3 = {arr:[],zeros:0,i:0,phase:1,autoRun:false,done:false,hl:-1}
+renderCode("code3",code3,-1);
+function setBtn3(dis){
+  document.getElementById("step3").disabled = dis;
+  document.getElementById("auto3").disabled = dis;
+}
+function initTab3(){
+  _logState = tab3;
+  tab3.arr = parseArr(document.getElementById("arrIn3").value);
+  tab3.zeros=0;tab3.i=0;tab3.phase=1;tab3.autoRun=false;tab3.done=false;tab3.hl=-1;
+  clearLog("log3");renderArr("arrBox3",tab3.arr);renderCode("code3",code3,-1);setBtn3(false);
+  addLog("log3","【初始化】数组："+JSON.stringify(tab3.arr));
+}
+async function stepTab3(){
+  let s = tab3;
+  _logState = s;
+  let sp = +document.getElementById("speed3").value;
+  let n = s.arr.length;
+  if(s.done) return; setBtn3(true);
+  if(s.phase ===1){
+    let i = s.i;
+    s.hl=4;renderCode("code3",code3,s.hl);addLog("log3",`统计0 i=${i}, zeros=${s.zeros}`);await sleep(sp/2);
+    s.hl=5;renderCode("code3",code3,s.hl);
+    if(s.arr[i]===0) s.zeros++;renderArr("arrBox3",s.arr,i);await sleep(sp);
+    s.i++;
+    if(s.i >= n){addLog("log3",`统计完成 总零数=${s.zeros}，进入偏移回填`);s.i=n-1;s.phase=2;}
+  }else if(s.phase===2){
+    let i = s.i;
+    s.hl=9;renderCode("code3",code3,s.hl);addLog("log3",`偏移回填 i=${i}, zeros=${s.zeros}`);await sleep(sp/2);
+    let offset = i + s.zeros;
+    if(s.arr[i]===0){
+      s.hl=10;renderCode("code3",code3,s.hl);
+      if(offset<n){s.arr[offset]=0;renderArr("arrBox3",s.arr,i,offset)}await sleep(sp);
+      s.hl=11;renderCode("code3",code3,s.hl);s.zeros--;
+      s.hl=12;renderCode("code3",code3,s.hl);
+      let o2 = i+s.zeros;if(o2<n){s.arr[o2]=0;renderArr("arrBox3",s.arr,i,o2,offset)}
+    }else{
+      s.hl=14;renderCode("code3",code3,s.hl);
+      if(offset<n){s.arr[offset]=s.arr[i];renderArr("arrBox3",s.arr,i,offset)}
+    }
+    await sleep(sp);s.i--;
+    if(s.i<0){addLog("log3","算法执行完成！结果："+JSON.stringify(s.arr));s.done=true;renderCode("code3",code3,-1);setBtn3(true)}
+  }
+  if(!s.done && !s.autoRun) setBtn3(false);
+}
+async function runAllTab3(){
+  if(tab3.autoRun || tab3.done) return;
+  tab3.autoRun=true;setBtn3(true);
+  while(tab3.autoRun && !tab3.done) await stepTab3();
+  tab3.autoRun=false;
+}
+
+window.onload = ()=>{
+  initTab1();initTab2();initTab3();
+}
+</script>
+</body>
+</html>
