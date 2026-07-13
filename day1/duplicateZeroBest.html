@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Duplicate Zeros Best - 算法可视化</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #f0f2f5;
+    color: #333;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .container { max-width: 960px; margin: 0 auto; }
+
+  h1 {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 6px;
+    color: #1a1a2e;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 20px;
+  }
+
+  /* ---- 输入区 ---- */
+  .input-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .input-row label { font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .input-row input {
+    flex: 1; min-width: 220px;
+    padding: 8px 12px;
+    border: 1px solid #d0d5dd;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  }
+  .input-row button {
+    padding: 8px 18px;
+    border: none; border-radius: 6px;
+    background: #4A90D9; color: #fff;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: background .15s;
+  }
+  .input-row button:hover { background: #357ABD; }
+
+  /* ---- 图例 ---- */
+  .legend {
+    display: flex; gap: 18px; justify-content: center;
+    margin-bottom: 14px; font-size: 12px;
+  }
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .legend .dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+  .dot.nz { background: #4A90D9; }
+  .dot.z  { background: #E74C3C; }
+  .dot.r  { border: 2px solid #F39C12; background: transparent; width: 10px; height: 10px; }
+  .dot.w  { border: 2px solid #2ECC71; background: transparent; width: 10px; height: 10px; }
+
+  /* ---- 数组可视化 ---- */
+  .array-section {
+    background: #fff; border-radius: 10px; padding: 20px 16px 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    margin-bottom: 14px;
+  }
+  .array-section h3 { font-size: 13px; color: #888; margin-bottom: 6px; text-align: center; }
+
+  .array-row {
+    display: flex; gap: 6px; justify-content: center;
+    flex-wrap: wrap; margin-bottom: 2px;
+  }
+  .cell-wrapper {
+    display: flex; flex-direction: column; align-items: center;
+    transition: transform .2s;
+  }
+  .cell {
+    width: 52px; height: 52px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 700; color: #fff;
+    border: 3px solid transparent;
+    transition: border-color .2s, transform .2s, box-shadow .2s;
+    position: relative;
+  }
+  .cell.nz { background: #4A90D9; }
+  .cell.z  { background: #E74C3C; }
+  .cell.read  { border-color: #F39C12; box-shadow: 0 0 10px rgba(243,156,18,.45); transform: translateY(-4px); }
+  .cell.write { border-color: #2ECC71; box-shadow: 0 0 10px rgba(46,204,113,.45); transform: translateY(-4px); }
+  .cell.read.write { border-color: #9B59B6; box-shadow: 0 0 12px rgba(155,89,182,.5); }
+  .idx-label {
+    font-size: 11px; color: #999; margin-top: 4px;
+    font-family: "SF Mono", "Fira Code", monospace;
+  }
+  .pointer-label {
+    font-size: 10px; font-weight: 700; margin-top: 1px;
+    min-height: 14px; text-align: center;
+  }
+  .pointer-label.read  { color: #F39C12; }
+  .pointer-label.write { color: #2ECC71; }
+
+  .annotation-bar {
+    text-align: center; margin-top: 10px;
+    font-size: 14px; font-weight: 600; color: #555;
+    min-height: 22px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: #f8f9fa;
+  }
+
+  /* ---- 变量面板 ---- */
+  .vars-panel {
+    background: #fff; border-radius: 10px; padding: 14px 18px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    margin-bottom: 14px;
+    display: flex; gap: 20px; align-items: center;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .var-card {
+    background: #f8f9fa; border-radius: 8px;
+    padding: 8px 16px; text-align: center; min-width: 70px;
+    border: 2px solid transparent; transition: border-color .25s;
+  }
+  .var-card.changed { border-color: #F39C12; }
+  .var-card .var-name  { font-size: 11px; color: #999; font-family: "SF Mono", monospace; }
+  .var-card .var-value { font-size: 22px; font-weight: 700; color: #1a1a2e; margin-top: 2px; }
+  .phase-tag {
+    display: inline-block; padding: 4px 14px; border-radius: 20px;
+    font-size: 12px; font-weight: 700; color: #fff;
+  }
+  .phase-tag.phase1 { background: #4A90D9; }
+  .phase-tag.phase2 { background: #E74C3C; }
+  .phase-tag.done   { background: #2ECC71; }
+
+  /* ---- 日志面板 ---- */
+  .log-section {
+    background: #fff; border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    margin-bottom: 14px; overflow: hidden;
+  }
+  .log-section h3 {
+    font-size: 13px; color: #888; padding: 12px 18px 8px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .log-panel {
+    background: #1a1a2e; color: #e0e0e0;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", "Consolas", monospace;
+    font-size: 12px; line-height: 1.8;
+    padding: 12px 18px; max-height: 280px;
+    overflow-y: auto; counter-reset: log-line;
+  }
+  .log-entry {
+    display: flex; gap: 8px;
+    padding: 2px 0;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+    animation: fadeIn .25s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: translateX(0); } }
+  .log-entry .log-num {
+    color: #858585; min-width: 24px; text-align: right;
+    flex-shrink: 0; user-select: none;
+  }
+  .log-entry .log-msg { flex: 1; white-space: pre-wrap; word-break: break-all; }
+  .log-entry .log-phase1 { color: #4A90D9; font-weight: 600; }
+  .log-entry .log-phase2 { color: #E74C3C; font-weight: 600; }
+  .log-entry .log-write  { color: #2ECC71; }
+  .log-entry .log-skip   { color: #888; }
+  .log-entry .log-var    { color: #F39C12; }
+  .log-entry .log-annotation { color: #999; font-style: italic; }
+  .log-empty {
+    text-align: center; color: #666; padding: 20px;
+    font-size: 13px;
+  }
+
+  /* ---- 控制栏 ---- */
+  .controls {
+    display: flex; gap: 10px; align-items: center;
+    justify-content: center; flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .controls button {
+    padding: 10px 20px; border: none; border-radius: 8px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: background .15s, transform .1s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .controls button:active { transform: scale(.96); }
+  .btn-play  { background: #2ECC71; color: #fff; }
+  .btn-play:hover  { background: #27AE60; }
+  .btn-pause { background: #F39C12; color: #fff; }
+  .btn-pause:hover { background: #E67E22; }
+  .btn-step  { background: #4A90D9; color: #fff; }
+  .btn-step:hover  { background: #357ABD; }
+  .btn-reset { background: #95A5A6; color: #fff; }
+  .btn-reset:hover { background: #7F8C8D; }
+
+  .speed-group {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: #888;
+  }
+  .speed-group input[type=range] { width: 100px; }
+
+  .step-counter {
+    font-size: 13px; font-weight: 600; color: #666;
+    min-width: 90px; text-align: center;
+  }
+
+  /* ---- 源码面板 ---- */
+  .code-section {
+    background: #fff; border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    overflow: hidden;
+  }
+  .code-section h3 {
+    font-size: 13px; color: #888; padding: 12px 18px 8px;
+  }
+  .code-panel {
+    background: #1E1E1E; color: #D4D4D4;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", "Consolas", monospace;
+    font-size: 13px; line-height: 1.7;
+    padding: 12px 0; overflow-x: auto;
+    max-height: 500px; overflow-y: auto;
+  }
+  .code-line {
+    display: flex; padding: 0 18px;
+    transition: background .2s;
+  }
+  .code-line.active {
+    background: rgba(255, 213, 0, 0.18);
+    border-left: 3px solid #FFD500;
+    padding-left: 15px;
+  }
+  .code-line .ln {
+    color: #858585; min-width: 28px; text-align: right;
+    margin-right: 16px; user-select: none;
+  }
+  .code-line .txt { white-space: pre; }
+  .code-line .kw { color: #569CD6; }
+  .code-line .fn { color: #DCDCAA; }
+  .code-line .cm { color: #6A9955; }
+  .code-line .str { color: #CE9178; }
+  .code-line .num { color: #B5CEA8; }
+  .code-line .op { color: #D4D4D4; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Duplicate Zeros Best 算法可视化</h1>
+  <p class="subtitle">zeros 计数法 — 统计零的个数 → 从右往左一次性搬移（O(1) 额外空间）</p>
+
+  <!-- 输入区 -->
+  <div class="input-row">
+    <label for="arrInput">输入数组:</label>
+    <input id="arrInput" type="text" value="1,0,2,3,0,4,5,0" placeholder="逗号分隔，如 1,0,2,3,0,4,5,0">
+    <button onclick="resetWithInput()">应用</button>
+  </div>
+
+  <!-- 图例 -->
+  <div class="legend">
+    <span><span class="dot nz"></span> 非零元素</span>
+    <span><span class="dot z"></span> 零元素</span>
+    <span><span class="dot r"></span> 读取位置 (i)</span>
+    <span><span class="dot w"></span> 写入位置 (i+zeros)</span>
+  </div>
+
+  <!-- 数组可视化 -->
+  <div class="array-section">
+    <h3 id="arrayLabel">数组状态</h3>
+    <div class="array-row" id="arrayRow"></div>
+    <div class="annotation-bar" id="annotation"></div>
+  </div>
+
+  <!-- 变量面板 -->
+  <div class="vars-panel" id="varsPanel">
+    <span class="phase-tag phase1" id="phaseTag">统计零的个数</span>
+    <div class="var-card" id="varZeros"><div class="var-name">zeros</div><div class="var-value">0</div></div>
+    <div class="var-card" id="varI"><div class="var-name">i</div><div class="var-value">—</div></div>
+    <div class="var-card" id="varTarget"><div class="var-name">i+zeros</div><div class="var-value">—</div></div>
+  </div>
+
+  <!-- 日志面板 -->
+  <div class="log-section">
+    <h3>📋 变量日志（每次循环迭代）</h3>
+    <div class="log-panel" id="logPanel"></div>
+  </div>
+
+  <!-- 控制栏 -->
+  <div class="controls">
+    <button class="btn-play" id="btnPlay" onclick="togglePlay()">
+      <span id="btnIcon">▶</span> <span id="btnLabel">自动播放</span>
+    </button>
+    <button class="btn-step" onclick="stepForward()">→ 下一步</button>
+    <button class="btn-reset" onclick="resetAnimation()">↺ 重置</button>
+    <div class="speed-group">
+      速度 <input type="range" id="speedSlider" min="100" max="2000" value="700" step="50" oninput="updateSpeed()">
+      <span id="speedLabel">700ms</span>
+    </div>
+    <span class="step-counter" id="stepCounter">步骤 0 / 0</span>
+  </div>
+
+  <!-- 源码面板 -->
+  <div class="code-section">
+    <h3>算法源码（高亮行 = 当前执行位置）</h3>
+    <div class="code-panel" id="codePanel"></div>
+  </div>
+</div>
+
+<script>
+// ===================== 源码定义 =====================
+const CODE_LINES = [
+  { ln: 1,  txt: 'function duplicateZerosBest(arr) {' },
+  { ln: 2,  txt: '  const n = arr.length;' },
+  { ln: 3,  txt: '' },
+  { ln: 4,  txt: '  // 第一轮：统计所有 0 的个数' },
+  { ln: 5,  txt: '  let zeros = 0;' },
+  { ln: 6,  txt: '  for (let i = 0; i < n; i++) {' },
+  { ln: 7,  txt: '    if (arr[i] === 0) zeros++;' },
+  { ln: 8,  txt: '  }' },
+  { ln: 9,  txt: '' },
+  { ln: 10, txt: '  // 第二轮：从右往左搬移' },
+  { ln: 11, txt: '  for (let i = n - 1; i >= 0; i--) {' },
+  { ln: 12, txt: '    if (arr[i] === 0) {' },
+  { ln: 13, txt: '      if (i + zeros < n) arr[i + zeros] = 0;  // 复制的 0' },
+  { ln: 14, txt: '      zeros--;' },
+  { ln: 15, txt: '      if (i + zeros < n) arr[i + zeros] = 0;  // 原始的 0' },
+  { ln: 16, txt: '    } else {' },
+  { ln: 17, txt: '      if (i + zeros < n) arr[i + zeros] = arr[i];' },
+  { ln: 18, txt: '    }' },
+  { ln: 19, txt: '  }' },
+  { ln: 20, txt: '' },
+  { ln: 21, txt: '  return arr;' },
+  { ln: 22, txt: '}' },
+];
+
+// ===================== 步骤生成 =====================
+function generateSteps(initialArr) {
+  const steps = [];
+  const arr = [...initialArr];
+  const n = arr.length;
+
+  function snap(line, vars, readIdx, writeIdx, annotation, phase, log) {
+    steps.push({
+      arr: [...arr],
+      line,
+      vars: { ...vars },
+      readIdx: readIdx ?? -1,
+      writeIdx: writeIdx ?? -1,
+      annotation: annotation || '',
+      phase: phase || '',
+      log: log || '',
+    });
+  }
+
+  // ---- 步骤 0：初始状态 ----
+  snap(1, { zeros: '?', i: '?', target: '?' }, -1, -1, '函数调用，准备开始', 'init');
+
+  // ---- 初始化 ----
+  snap(2, { zeros: '?', i: '?', target: '?' }, -1, -1, 'n = arr.length = ' + n, 'init');
+
+  // ---- 第一轮：统计零的个数 ----
+  snap(5, { zeros: 0, i: '?', target: '?' }, -1, -1, '初始化 zeros = 0，开始统计', 'phase1');
+  let zeros = 0;
+
+  snap(6, { zeros: 0, i: 0, target: '?' }, 0, -1, '进入循环，i = 0', 'phase1');
+
+  for (let i = 0; i < n; i++) {
+    snap(7, { zeros, i, target: '?' }, i, -1,
+      `检查 arr[${i}] = ${arr[i]}，${arr[i] === 0 ? '是零！zeros 将 +1' : '非零，跳过'}`, 'phase1',
+      `<span class="log-phase1">[统计]</span> i=${i}  arr[${i}]=${arr[i]}  zeros=${zeros}`);
+
+    if (arr[i] === 0) zeros++;
+
+    // 统计完成后的状态（准备进入下次循环或结束）
+    if (i < n - 1) {
+      snap(6, { zeros, i: i + 1, target: '?' }, i, -1,
+        `统计完 arr[${i}]，zeros = ${zeros}，继续 i = ${i + 1}`, 'phase1');
+    } else {
+      snap(8, { zeros, i: '—', target: '?' }, -1, -1,
+        `统计完毕！共有 ${zeros} 个零`, 'phase1');
+    }
+  }
+
+  // ---- 第二轮：从右往左搬移 ----
+  snap(11, { zeros, i: n - 1, target: '?' }, n - 1, -1,
+    `第二轮开始：从右往左处理，i = ${n - 1}`, 'phase2');
+
+  for (let i = n - 1; i >= 0; i--) {
+    const target = i + zeros;
+
+    if (arr[i] === 0) {
+      // 复制的 0
+      snap(13, { zeros, i, target }, i, target,
+        `arr[${i}] = 0，准备在 i+zeros=${target} 处写入复制的 0` +
+        (target < n ? '' : '（越界，跳过）'), 'phase2');
+
+      if (target < n) {
+        arr[target] = 0;
+        snap(13, { zeros, i, target }, i, target,
+          `arr[${target}] = 0 ✓（复制的 0）`, 'phase2');
+      }
+
+      // zeros--
+      zeros--;
+      snap(14, { zeros, i, target: i + zeros }, i, i + zeros,
+        `zeros-- → zeros = ${zeros}`, 'phase2');
+
+      // 原始的 0
+      const origTarget = i + zeros;
+      snap(15, { zeros, i, target: origTarget }, i, origTarget,
+        `在 i+zeros=${origTarget} 处写入原始的 0` +
+        (origTarget < n ? '' : '（越界，跳过）'), 'phase2');
+
+      if (origTarget < n) {
+        arr[origTarget] = 0;
+        snap(15, { zeros, i, target: origTarget }, i, origTarget,
+          `arr[${origTarget}] = 0 ✓（原始的 0）`, 'phase2');
+      }
+    } else {
+      // 非零元素
+      snap(17, { zeros, i, target }, i, target,
+        `arr[${i}] = ${arr[i]}（非零），搬到 i+zeros=${target}` +
+        (target < n ? '' : '（越界，跳过）'), 'phase2');
+
+      if (target < n) {
+        arr[target] = arr[i];
+        snap(17, { zeros, i, target }, i, target,
+          `arr[${target}] = arr[${i}] = ${arr[target]} ✓`, 'phase2');
+      }
+    }
+
+    // 准备处理下一个 i
+    if (i > 0) {
+      snap(11, { zeros, i: i - 1, target: '?' }, i - 1, -1,
+        `完成 arr[${i}]，继续 i = ${i - 1}`, 'phase2');
+    }
+  }
+
+  // ---- 完成 ----
+  snap(21, { zeros: 0, i: '—', target: '?' }, -1, -1,
+    '算法完成，返回结果数组', 'done');
+
+  return steps;
+}
+
+// ===================== 动画控制器 =====================
+let steps = [];
+let currentStep = 0;
+let timer = null;
+let playing = false;
+let speed = 700;
+
+// 日志累积
+let accumulatedLogs = [];
+const seenLogKeys = new Set();
+
+function updateSpeed() {
+  speed = parseInt(document.getElementById('speedSlider').value);
+  document.getElementById('speedLabel').textContent = speed + 'ms';
+  if (playing) {
+    clearInterval(timer);
+    timer = setInterval(autoStep, speed);
+  }
+}
+
+function togglePlay() {
+  if (playing) {
+    pause();
+  } else {
+    play();
+  }
+}
+
+function play() {
+  if (currentStep >= steps.length - 1) {
+    resetAnimation();
+  }
+  playing = true;
+  document.getElementById('btnIcon').textContent = '⏸';
+  document.getElementById('btnLabel').textContent = '暂停';
+  document.getElementById('btnPlay').className = 'btn-pause';
+  timer = setInterval(autoStep, speed);
+}
+
+function pause() {
+  playing = false;
+  clearInterval(timer);
+  timer = null;
+  document.getElementById('btnIcon').textContent = '▶';
+  document.getElementById('btnLabel').textContent = '自动播放';
+  document.getElementById('btnPlay').className = 'btn-play';
+}
+
+function autoStep() {
+  if (currentStep < steps.length - 1) {
+    currentStep++;
+    renderStep(currentStep);
+  } else {
+    pause();
+  }
+}
+
+function stepForward() {
+  pause();
+  if (currentStep < steps.length - 1) {
+    currentStep++;
+    renderStep(currentStep);
+  }
+}
+
+function resetAnimation() {
+  pause();
+  currentStep = 0;
+  accumulatedLogs = [];
+  seenLogKeys.clear();
+  prevVars = {};
+  renderStep(0);
+}
+
+function resetWithInput() {
+  const raw = document.getElementById('arrInput').value.trim();
+  if (!raw) return;
+  let arr;
+  try {
+    arr = raw.split(',').map(s => {
+      const n = Number(s.trim());
+      if (isNaN(n)) throw new Error('无效数字: ' + s);
+      return n;
+    });
+  } catch (e) {
+    alert('输入格式错误，请使用逗号分隔的数字，如: 1,0,2,3,0,4,5,0');
+    return;
+  }
+  if (arr.length === 0 || arr.length > 15) {
+    alert('数组长度需在 1~15 之间');
+    return;
+  }
+  steps = generateSteps(arr);
+  accumulatedLogs = [];
+  seenLogKeys.clear();
+  prevVars = {};
+  resetAnimation();
+}
+
+// ===================== 日志 =====================
+function appendLog(step) {
+  // 只在有意义的关键步骤记录日志（有实际变量值的迭代）
+  if (step.phase === 'init') return;
+
+  const v = step.vars;
+  const i = v.i !== '?' && v.i !== '—' ? v.i : null;
+  const zeros = v.zeros !== '?' && v.zeros !== '—' ? v.zeros : null;
+  const target = v.target !== '?' && v.target !== '—' ? v.target : null;
+
+  // 用 phase + i + 前一步 zeros 做去重 key，避免重复记录
+  const key = `${step.phase}|${i}|${target}`;
+  if (seenLogKeys.has(key)) return;
+  seenLogKeys.add(key);
+
+  let cssClass = 'log-phase2';
+  let label = '[搬移]';
+  if (step.phase === 'phase1') {
+    cssClass = 'log-phase1';
+    label = '[统计]';
+  }
+
+  const parts = [];
+  if (i !== null) parts.push(`i=${i}`);
+  if (zeros !== null) parts.push(`zeros=${zeros}`);
+  if (target !== null) parts.push(`i+zeros=${target}`);
+
+  const varsStr = parts.join('  ');
+  const skipInfo = step.annotation.includes('越界') ? ' <span class="log-skip">⚠ 越界跳过</span>' : '';
+  const writeInfo = step.annotation.includes('✓') ? ' <span class="log-write">✓ 写入</span>' : '';
+
+  accumulatedLogs.push(
+    `<span class="${cssClass}">${label}</span> ${varsStr}${skipInfo}${writeInfo}` +
+    `  <span class="log-annotation">${step.annotation}</span>`
+  );
+}
+
+function renderLogs() {
+  const panel = document.getElementById('logPanel');
+  if (accumulatedLogs.length === 0) {
+    panel.innerHTML = '<div class="log-empty">等待执行...</div>';
+    return;
+  }
+  let html = '';
+  for (let k = 0; k < accumulatedLogs.length; k++) {
+    html += `<div class="log-entry"><span class="log-num">${k + 1}</span><span class="log-msg">${accumulatedLogs[k]}</span></div>`;
+  }
+  panel.innerHTML = html;
+  // 自动滚动到底部
+  panel.scrollTop = panel.scrollHeight;
+}
+
+// ===================== 渲染 =====================
+function renderStep(idx) {
+  const step = steps[idx];
+  const n = step.arr.length;
+
+  // ---- 更新步骤计数器 ----
+  document.getElementById('stepCounter').textContent =
+    `步骤 ${idx} / ${steps.length - 1}`;
+
+  // ---- 更新数组标签 ----
+  const label = document.getElementById('arrayLabel');
+  if (idx === 0) {
+    label.textContent = '原始数组';
+  } else if (step.phase === 'done') {
+    label.textContent = '最终结果';
+  } else if (step.phase === 'phase1') {
+    label.textContent = '当前数组（统计零的个数中）';
+  } else {
+    label.textContent = '当前数组（从右往左搬移中）';
+  }
+
+  // ---- 渲染数组 ----
+  const row = document.getElementById('arrayRow');
+  let html = '';
+  for (let j = 0; j < n; j++) {
+    const val = step.arr[j];
+    const isZero = val === 0;
+    const isRead  = j === step.readIdx;
+    const isWrite = j === step.writeIdx;
+
+    let cellClass = isZero ? 'z' : 'nz';
+    let ptrLabel = '';
+    let ptrClass = '';
+    if (isRead && isWrite) {
+      cellClass += ' read write';
+      ptrLabel = 'R/W';
+      ptrClass = 'read';
+    } else if (isRead) {
+      cellClass += ' read';
+      ptrLabel = 'R';
+      ptrClass = 'read';
+    } else if (isWrite) {
+      cellClass += ' write';
+      ptrLabel = 'W';
+      ptrClass = 'write';
+    }
+
+    html += '<div class="cell-wrapper">';
+    html += `<div class="cell ${cellClass}">${val}</div>`;
+    html += `<div class="idx-label">[${j}]</div>`;
+    html += `<div class="pointer-label ${ptrClass}">${ptrLabel}</div>`;
+    html += '</div>';
+  }
+  row.innerHTML = html;
+
+  // ---- 更新注释 ----
+  document.getElementById('annotation').textContent = step.annotation;
+
+  // ---- 更新变量面板 ----
+  const phaseTag = document.getElementById('phaseTag');
+  phaseTag.className = 'phase-tag';
+  switch (step.phase) {
+    case 'init':   phaseTag.textContent = '初始化'; phaseTag.classList.add('phase1'); break;
+    case 'phase1': phaseTag.textContent = '统计零的个数'; phaseTag.classList.add('phase1'); break;
+    case 'phase2': phaseTag.textContent = '从右往左搬移'; phaseTag.classList.add('phase2'); break;
+    case 'done':   phaseTag.textContent = '完成'; phaseTag.classList.add('done'); break;
+  }
+
+  updateVarCard('varZeros',  'zeros',  step.vars.zeros);
+  updateVarCard('varI',     'i',      step.vars.i);
+  updateVarCard('varTarget','target', step.vars.target);
+
+  // ---- 更新日志 ----
+  appendLog(step);
+  renderLogs();
+
+  // ---- 更新源码高亮（DOM 构建）----
+  const codePanel = document.getElementById('codePanel');
+  codePanel.innerHTML = '';
+  for (const cl of CODE_LINES) {
+    const lineDiv = document.createElement('div');
+    lineDiv.className = 'code-line' + (cl.ln === step.line ? ' active' : '');
+
+    const lnSpan = document.createElement('span');
+    lnSpan.className = 'ln';
+    lnSpan.textContent = cl.ln;
+    lineDiv.appendChild(lnSpan);
+
+    const txtSpan = document.createElement('span');
+    txtSpan.className = 'txt';
+    buildHighlightedContent(txtSpan, cl.txt);
+    lineDiv.appendChild(txtSpan);
+
+    codePanel.appendChild(lineDiv);
+  }
+
+  // 自动滚动源码面板到高亮行
+  const activeLine = codePanel.querySelector('.code-line.active');
+  if (activeLine) {
+    activeLine.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+}
+
+// ---- 变量卡片更新 ----
+let prevVars = {};
+function updateVarCard(id, name, val) {
+  const card = document.getElementById(id);
+  const displayVal = val === '?' ? '?' : (val === '—' ? '—' : val);
+  card.querySelector('.var-value').textContent = displayVal;
+  if (prevVars[name] !== undefined && prevVars[name] !== val) {
+    card.classList.add('changed');
+    setTimeout(() => card.classList.remove('changed'), 400);
+  }
+  prevVars[name] = val;
+}
+
+// ---- 基于 DOM 的语法高亮 ----
+function buildHighlightedContent(parent, text) {
+  var TOKEN_RE = /(\/\/.*)|(\b(?:function|let|const|var|if|else|for|break|return)\b)|(\b[a-zA-Z_]\w*(?=\s*\())|(\b\d+\b)|('.*?'|".*?")/g;
+
+  var lastIndex = 0;
+  var match;
+
+  while ((match = TOKEN_RE.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parent.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+    }
+
+    var span = document.createElement('span');
+    if (match[1])       span.className = 'cm';  // 注释
+    else if (match[2])  span.className = 'kw';  // 关键字
+    else if (match[3])  span.className = 'fn';  // 函数名
+    else if (match[4])  span.className = 'num'; // 数字
+    else if (match[5])  span.className = 'str'; // 字符串
+    span.textContent = match[0];
+    parent.appendChild(span);
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    parent.appendChild(document.createTextNode(text.slice(lastIndex)));
+  }
+
+  if (parent.childNodes.length === 0) {
+    parent.appendChild(document.createTextNode(' '));
+  }
+}
+
+// ===================== 初始化 =====================
+function init() {
+  const defaultArr = [1, 0, 2, 3, 0, 4, 5, 0];
+  steps = generateSteps(defaultArr);
+  renderStep(0);
+}
+
+init();
+</script>
+</body>
+</html>
