@@ -1,3 +1,5 @@
+"use strict";
+
 // ============================================================
 // LeetCode 33. 搜索旋转排序数组 (Search in Rotated Sorted Array)
 // ============================================================
@@ -11,17 +13,14 @@
 //   2. 否则右半有序 → 判断 target 是否在 (nums[mid], nums[right]] 范围内
 //   每轮排除一半，O(log n)
 // ============================================================
-
 function search(nums, target) {
-  let left = 0;
-  let right = nums.length - 1;
+  var left = 0;
+  var right = nums.length - 1;
 
   while (left <= right) {
-    const mid = Math.floor((left + right) / 2);
+    var mid = Math.floor((left + right) / 2);
+    if (nums[mid] === target) return mid; // ── 判断哪一半是有序的 ──
 
-    if (nums[mid] === target) return mid;
-
-    // ── 判断哪一半是有序的 ──
     if (nums[left] <= nums[mid]) {
       // 左半有序 [left, mid]
       if (nums[left] <= target && target < nums[mid]) {
@@ -43,11 +42,13 @@ function search(nums, target) {
 }
 
 function search22(nums, target) {
-  let left = 0,
-    right = nums.length - 1;
+  var left = 0,
+      right = nums.length - 1;
+
   while (left <= right) {
-    let mid = Math.floor((left + right) / 2);
+    var mid = Math.floor((left + right) / 2);
     if (nums[mid] == target) return mid;
+
     if (nums[left] <= nums[mid]) {
       if (nums[left] <= target && target < nums[mid]) {
         right = mid - 1;
@@ -62,15 +63,18 @@ function search22(nums, target) {
       }
     }
   }
+
   return -1;
 }
 
 function search222(nums, target) {
-  let left = 0,
-    right = nums.length - 1;
+  var left = 0,
+      right = nums.length - 1;
+
   while (left <= right) {
-    let mid = Math.floor((left + right) / 2);
+    var mid = Math.floor((left + right) / 2);
     if (nums[mid] == target) return mid;
+
     if (nums[left] < nums[mid]) {
       if (nums[left] <= target && target < nums[mid]) {
         right = mid - 1;
@@ -85,13 +89,9 @@ function search222(nums, target) {
       }
     }
   }
+
   return -1;
-}
-// ❌ search222 错误点：
-// 第 74 行：nums[left] < nums[mid] → 应为 nums[left] <= nums[mid]
-// 原因：当 left === mid（区间剩 1~2 个元素）时，< 会漏掉"单个元素也算有序"的情况，
-//       导致代码错误进入 else 分支。<= 才能正确识别左半有序。
-// ----------------------------------------------------------
+} // ----------------------------------------------------------
 // 图解：
 //
 // nums = [4, 5, 6, 7, 0, 1, 2], target = 0
@@ -120,7 +120,6 @@ function search222(nums, target) {
 // 第三轮:  left=4, right=4, mid=4
 //   nums[4]=0 === target → 返回 4 ✅
 // ----------------------------------------------------------
-
 // ============================================================
 // LeetCode 81. 搜索旋转排序数组 II（有重复元素）
 // ============================================================
@@ -129,16 +128,15 @@ function search222(nums, target) {
 // 时间：平均 O(log n)，最坏 O(n)  空间：O(1)
 // ============================================================
 
+
 function search2(nums, target) {
-  let left = 0;
-  let right = nums.length - 1;
+  var left = 0;
+  var right = nums.length - 1;
 
   while (left <= right) {
-    const mid = Math.floor((left + right) / 2);
+    var mid = Math.floor((left + right) / 2);
+    if (nums[mid] === target) return true; // 无法判断哪边有序 → 左右同时收缩
 
-    if (nums[mid] === target) return true;
-
-    // 无法判断哪边有序 → 左右同时收缩
     if (nums[left] === nums[mid] && nums[mid] === nums[right]) {
       left++;
       right--;
@@ -161,12 +159,15 @@ function search2(nums, target) {
 
   return false;
 }
+
 function search333(nums, target) {
-  let left = 0,
-    right = nums.length - 1;
+  var left = 0,
+      right = nums.length - 1;
+
   while (left <= right) {
-    let mid = Math.floor((left + right) / 2);
+    var mid = Math.floor((left + right) / 2);
     if (nums[mid] == target) return true;
+
     if (nums[left] == target && nums[right] == target) {
       left++;
       right--;
@@ -184,15 +185,9 @@ function search333(nums, target) {
       }
     }
   }
+
   return false;
-}
-// ❌ search333 错误点：
-// 第 166 行：nums[left] == target && nums[right] == target
-//        → 应为 nums[left] === nums[mid] && nums[mid] === nums[right]
-// 原因：这是 LeetCode 81 处理重复元素的逻辑——当三个指针的值相等时
-//       无法判断哪边有序，才收缩边界。写成 == target 完全丢掉了这个意图，
-//       这步判断的是三个指针的值，和 target 无关。
-// ----------------------------------------------------------
+} // ----------------------------------------------------------
 // 为什么三个相等时 left++ right-- 是安全的？
 //
 // nums = [1, 0, 1, 1, 1], target = 0
@@ -200,7 +195,6 @@ function search333(nums, target) {
 // nums[left]=1, nums[mid]=1, nums[right]=1 → 无法判断
 // left++, right-- → 缩小范围 [0, 1, 1]（目标 0 还在里面）✓
 // ----------------------------------------------------------
-
 // ============================================================
 // 四道题的关系总结
 // ============================================================
@@ -221,15 +215,19 @@ function search333(nums, target) {
 // | 81   | 搜索 target | 有   | 同 33 + 相等时收缩                | 平均 O(log n) |
 // | 153  | 找最小值    | 无   | nums[mid] vs nums[right]         | O(log n)      |
 // | 154  | 找最小值    | 有   | 同 153 + 相等时 right--           | 平均 O(log n) |
-
 // ============================================================
 // 测试
 // ============================================================
+
+
 console.log("33. 搜索旋转排序数组（无重复）:");
 console.log("  [4,5,6,7,0,1,2], target=0 →", search([4, 5, 6, 7, 0, 1, 2], 0)); // 4
+
 console.log("  [4,5,6,7,0,1,2], target=3 →", search([4, 5, 6, 7, 0, 1, 2], 3)); // -1
+
 console.log("  [1], target=0             →", search([1], 0)); // -1
 
 console.log("81. 搜索旋转排序数组 II（有重复）:");
 console.log("  [2,5,6,0,0,1,2], target=0 →", search2([2, 5, 6, 0, 0, 1, 2], 0)); // true
+
 console.log("  [2,5,6,0,0,1,2], target=3 →", search2([2, 5, 6, 0, 0, 1, 2], 3)); // false

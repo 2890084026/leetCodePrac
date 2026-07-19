@@ -1,3 +1,5 @@
+"use strict";
+
 // ============================================================
 // LeetCode 74. 搜索二维矩阵 (Search a 2D Matrix)
 // ============================================================
@@ -6,30 +8,26 @@
 // 方法：二分查找，一维索引 → 二维坐标转换。
 // 时间：O(log(m*n))  空间：O(1)
 // ============================================================
-
 function searchMatrix(matrix, target) {
-  const m = matrix.length; // 行数
-  const n = matrix[0].length; // 列数
-  let left = 0;
-  let right = m * n - 1; // 当作一维数组 [0 ... m*n-1]
+  var m = matrix.length; // 行数
+
+  var n = matrix[0].length; // 列数
+
+  var left = 0;
+  var right = m * n - 1; // 当作一维数组 [0 ... m*n-1]
 
   while (left <= right) {
-    const mid = Math.floor((left + right) / 2);
-
-    // 一维索引 → 二维坐标
+    var mid = Math.floor((left + right) / 2); // 一维索引 → 二维坐标
     // 行 = Math.floor(mid / n)  → 每满 n 个元素换一行
     // 列 = mid % n              → 当前行内的偏移
-    const val = matrix[Math.floor(mid / n)][mid % n];
 
+    var val = matrix[Math.floor(mid / n)][mid % n];
     if (val === target) return true;
-    if (val < target) left = mid + 1;
-    else right = mid - 1;
+    if (val < target) left = mid + 1;else right = mid - 1;
   }
 
   return false;
-}
-
-// ----------------------------------------------------------
+} // ----------------------------------------------------------
 // 图解：为什么 matrix[Math.floor(mid / n)][mid % n] 是正确的？
 //
 // 假设 3 行 × 4 列（m=3, n=4）：
@@ -44,7 +42,6 @@ function searchMatrix(matrix, target) {
 //   列 = 7 % 4 = 3             → 第 3 列
 //   matrix[1][3] = 7  ✓
 // ----------------------------------------------------------
-
 // ============================================================
 // LeetCode 240. 搜索二维矩阵 II (Search a 2D Matrix II)
 // ============================================================
@@ -53,15 +50,15 @@ function searchMatrix(matrix, target) {
 // 时间：O(m + n)  空间：O(1)
 // ============================================================
 
+
 function searchMatrix2(matrix, target) {
   if (!matrix.length || !matrix[0].length) return false;
+  var row = 0; // 从右上角开始
 
-  let row = 0; // 从右上角开始
-  let col = matrix[0].length - 1;
+  var col = matrix[0].length - 1;
 
   while (row < matrix.length && col >= 0) {
-    const val = matrix[row][col];
-
+    var val = matrix[row][col];
     if (val === target) return true;
 
     if (val > target) {
@@ -72,9 +69,7 @@ function searchMatrix2(matrix, target) {
   }
 
   return false;
-}
-
-// ----------------------------------------------------------
+} // ----------------------------------------------------------
 // 图解：右上角出发
 //
 //   [ 1,  4,  7, 11, 15]     target = 5
@@ -89,7 +84,6 @@ function searchMatrix2(matrix, target) {
 //  4 < 5 → row++（向下）
 //    5 = 5 ✓ 找到
 // ----------------------------------------------------------
-
 // ============================================================
 // 对比总结
 // ============================================================
@@ -99,26 +93,19 @@ function searchMatrix2(matrix, target) {
 // | 方法        | 二分查找（当一维数组）       | 右上角/左下角 Z 字查找  |
 // | 时间        | O(log(mn))                 | O(m + n)               |
 // | 空间        | O(1)                       | O(1)                   |
-
 // ============================================================
 // 测试
 // ============================================================
-const matrix74 = [
-  [1, 3, 5, 7],
-  [10, 11, 16, 20],
-  [23, 30, 34, 60],
-];
+
+
+var matrix74 = [[1, 3, 5, 7], [10, 11, 16, 20], [23, 30, 34, 60]];
 console.log("74. 搜索二维矩阵:");
 console.log("  target=3  →", searchMatrix(matrix74, 3)); // true
+
 console.log("  target=13 →", searchMatrix(matrix74, 13)); // false
 
-const matrix240 = [
-  [1, 4, 7, 11, 15],
-  [2, 5, 8, 12, 19],
-  [3, 6, 9, 16, 22],
-  [10, 13, 14, 17, 24],
-  [18, 21, 23, 26, 30],
-];
+var matrix240 = [[1, 4, 7, 11, 15], [2, 5, 8, 12, 19], [3, 6, 9, 16, 22], [10, 13, 14, 17, 24], [18, 21, 23, 26, 30]];
 console.log("240. 搜索二维矩阵 II:");
 console.log("  target=5  →", searchMatrix2(matrix240, 5)); // true
+
 console.log("  target=20 →", searchMatrix2(matrix240, 20)); // false
