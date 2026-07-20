@@ -46,6 +46,32 @@ var lengthOfLongestSubstring = function (s) {
     }
     return len
 };
+
+function lengthOfLongestSubstring2(s) {
+    let len = 0, left = 0, set = new Set()
+    for (let right = 0; right < s.length; right++) {
+        while (set.has(s[right])) {
+            set.delete(s[left])
+            left++
+        }
+        set.add(s[right])
+        len = Math.max(len, set.size)
+    }
+    return len
+};
+
+function lengthOfLongestSubstring3(s) {
+    let left = 0, set = new Set(), maxlen = 0
+    for (let str of s) {
+        while (set.has(str)) {
+            set.delete(s[left])
+            left++
+        }
+        set.add(str)
+        maxlen = Math.max(maxlen, set.size)
+    }
+    return maxlen
+};
 console.log(lengthOfLongestSubstring("abcabcbb")); // 3
 console.log(lengthOfLongestSubstring("bbbbb")); // 1
 console.log(lengthOfLongestSubstring("pwwkew")); // 3

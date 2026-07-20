@@ -47,6 +47,65 @@ var lengthOfLongestSubstring = function lengthOfLongestSubstring(s) {
   return len;
 };
 
+function lengthOfLongestSubstring2(s) {
+  var len = 0,
+      left = 0,
+      set = new Set();
+
+  for (var right = 0; right < s.length; right++) {
+    while (set.has(s[right])) {
+      set["delete"](s[left]);
+      left++;
+    }
+
+    set.add(s[right]);
+    len = Math.max(len, set.size);
+  }
+
+  return len;
+}
+
+;
+
+function lengthOfLongestSubstring3(s) {
+  var left = 0,
+      set = new Set(),
+      maxlen = 0;
+  var _iteratorNormalCompletion = true;
+  var _didIteratorError = false;
+  var _iteratorError = undefined;
+
+  try {
+    for (var _iterator = s[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+      var str = _step.value;
+
+      while (set.has(str)) {
+        set["delete"](s[left]);
+        left++;
+      }
+
+      set.add(str);
+      maxlen = Math.max(maxlen, set.size);
+    }
+  } catch (err) {
+    _didIteratorError = true;
+    _iteratorError = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+        _iterator["return"]();
+      }
+    } finally {
+      if (_didIteratorError) {
+        throw _iteratorError;
+      }
+    }
+  }
+
+  return maxlen;
+}
+
+;
 console.log(lengthOfLongestSubstring("abcabcbb")); // 3
 
 console.log(lengthOfLongestSubstring("bbbbb")); // 1

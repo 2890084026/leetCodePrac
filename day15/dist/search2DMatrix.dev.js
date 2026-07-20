@@ -27,7 +27,30 @@ function searchMatrix(matrix, target) {
   }
 
   return false;
-} // ----------------------------------------------------------
+}
+
+function searchMatrix22(matrix, target) {
+  var m = matrix[0].length,
+      n = matrix.length;
+  var left = 0,
+      right = m * n - 1;
+
+  while (left <= right) {
+    var mid = Math.floor((left + right) / 2);
+    var val = matrix[Math.floor(mid / n)][mid % n];
+    if (val == target) return true;
+
+    if (val < target) {
+      left = mid + 1;
+    } else {
+      right = mid - 1;
+    }
+  }
+
+  return false;
+}
+
+; // ----------------------------------------------------------
 // 图解：为什么 matrix[Math.floor(mid / n)][mid % n] 是正确的？
 //
 // 假设 3 行 × 4 列（m=3, n=4）：
@@ -49,7 +72,6 @@ function searchMatrix(matrix, target) {
 // 方法：从右上角出发，利用行列有序性，每次排除一行或一列。
 // 时间：O(m + n)  空间：O(1)
 // ============================================================
-
 
 function searchMatrix2(matrix, target) {
   if (!matrix.length || !matrix[0].length) return false;

@@ -89,4 +89,50 @@ function isValidBracket(strs) {
   return stack.length == 0;
 }
 
+function isValid22(s) {
+  if (!s.length) return false;
+  var brackmap = {
+    ')': '(',
+    '}': '{',
+    ']': '['
+  };
+  var stack = [];
+  var _iteratorNormalCompletion2 = true;
+  var _didIteratorError2 = false;
+  var _iteratorError2 = undefined;
+
+  try {
+    for (var _iterator2 = s[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+      var str = _step2.value;
+
+      if (Object.values(brackmap).includes(str)) {
+        stack.push(str);
+      } else if (str in brackmap) {
+        if (!stack.length || stack.pop !== brackmap[str]) {
+          //pop没调用
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
+  } catch (err) {
+    _didIteratorError2 = true;
+    _iteratorError2 = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
+        _iterator2["return"]();
+      }
+    } finally {
+      if (_didIteratorError2) {
+        throw _iteratorError2;
+      }
+    }
+  }
+
+  return stack.length == 0;
+}
+
+;
 console.log(isValidBracket('{[]}')); // 输出: true

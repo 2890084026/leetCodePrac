@@ -74,5 +74,27 @@ function isValidBracket(strs) {
   }
   return stack.length == 0
 }
+function isValid22(s) {
+    if (!s.length) return false
+    let brackmap = {
+        ')': '(',
+        '}': '{',
+        ']': '[',
+    }
+    let stack = []
+    for (let str of s) {
+        if (Object.values(brackmap).includes(str)) {
+            stack.push(str)
+        } else if (str in brackmap) {
+            if (!stack.length || stack.pop !== brackmap[str]) {
+              //pop没调用
+                return false
+            }
+        } else {
+            return false
+        }
+    }
+    return stack.length == 0
+};
 
 console.log(isValidBracket('{[]}')) // 输出: true

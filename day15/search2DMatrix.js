@@ -29,6 +29,21 @@ function searchMatrix(matrix, target) {
   return false;
 }
 
+function searchMatrix22(matrix, target) {
+    let m = matrix[0].length, n = matrix.length
+    let left = 0, right = m * n - 1
+    while (left <= right) {
+        let mid = Math.floor((left + right) / 2)
+        let val = matrix[Math.floor(mid / n)][mid % n]
+        if (val == target) return true
+        if (val < target) {
+            left = mid + 1
+        } else {
+            right = mid - 1
+        }
+    }
+    return false
+};
 // ----------------------------------------------------------
 // 图解：为什么 matrix[Math.floor(mid / n)][mid % n] 是正确的？
 //
